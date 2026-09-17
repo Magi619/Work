@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Mini HTML Editor</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root {
+      --accent:#0b76d1;
+      --accent-dark:#095a9c;
+      --bg:#f4f7fb;
+      --card:#fff;
+      --muted:#666;
+      --text:#222;
+    }
+
+    body.dark-mode {
+      --accent:#58a6ff;
+      --accent-dark:#1f6feb;
+      --bg:#0d1117;
+      --card:#161b22;
+      --muted:#999;
+      --text:#e6edf3;
+    }
+
+    html,body{height:100%;margin:0;}
+    body{
+      padding:40px;
+      font-family:"Segoe UI",Roboto,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      min-height:100vh;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* Header bar */
+    .header-bar {
+      width:94%;
+      max-width:1600px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:14px;
+    }
+    .header-bar h1 {
+      margin:0 auto;
+      font-size:28px;
+      font-weight:700;
+      color:var(--accent);
+    }
+    .toggle-btn{
+      background:none;
+      border:1px solid var(--muted);
+      border-radius:20px;
+      padding:6px 14px;
+      color:var(--muted);
+      font-size:14px;
+      cursor:pointer;
+      transition:all 0.3s;
+    }
+    .toggle-btn:hover{ color:var(--accent); border-color:var(--accent); }
+
+    .editor-container{
+      width:94%;
+      max-width:1600px;
+      background:var(--card);
+      border-radius:12px;
+      box-shadow:0 8px 28px rgba(14,30,37,0.2);
+      display:flex;
+      gap:24px;
+      padding:22px;
+      align-items:stretch;
+      transition: background 0.3s;
+      margin-bottom:40px;
+    }
+
+    .panel{display:flex;flex-direction:column;gap:12px;}
+    .panel-header{height:40px;display:flex;align-items:center;justify-content:center;}
+    .panel-header h3{margin:0;font-size:18px;font-weight:600;color:var(--accent);}
+    .panel-body{flex:1;display:flex;flex-direction:column;gap:14px;min-height:500px;}
+
+    .left-panel{ flex:1; min-width:420px; }
+    .right-panel{ flex:1; min-width:420px; }
+    .middle-panel{flex:0 0 120px;min-width:120px;max-width:120px;}
+
+    .toolbar{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      justify-content:center;
+      background: var(--card);
+      padding: 6px;
+      border-radius: 8px;
+      z-index: 1;
+      transition: background 0.3s;
+    }
+
+    button{
+      background:var(--accent);
+      color:#fff;
+      border:0;
+      border-radius:20px;
+      padding:10px 18px;
+      font-size:15px;
+      cursor:pointer;
+      min-width:74px;
+      transition:background .14s ease, transform .06s ease, box-shadow .1s;
+    }
+    button:hover{ background:var(--accent-dark); transform:translateY(-1px); box-shadow:0 2px 6px rgba(0,0,0,0.25); }
+    .control-btn{ width:92px; border-radius:10px; }
+
+    /* Brand buttons */
+    .btn-vw{ background:#E11931; }
+    .btn-adc{ background:#F15B46; }
+    .btn-wp{ background:#CF004F; }
+
+    textarea{
+      flex:1;
+      width:100%;
+      resize:none;
+      padding:14px;
+      font-size:16px;
+      border-radius:8px;
+      border:1px solid #d8dbe0;
+      outline:none;
+      box-sizing:border-box;
+      line-height:1.45;
+      background:var(--bg);
+      color:var(--text);
+      transition: background 0.3s, color 0.3s;
+      min-height:500px;
+    }
+
+    .preview{
+      flex:1;
+      padding:20px;
+      border-radius:8px;
+      border:1px solid #e1e4e8;
+      background:#fafafa;
+      overflow:auto;
+      font-size:16px;
+      color:var(--text);
+      box-sizing:border-box;
+      transition: background 0.3s, color 0.3s;
+      min-height:500px;
+    }
+    body.dark-mode .preview {
+      background:#0d1117;
+      border-color:#30363d;
+    }
+
+    .middle-panel .panel-body{align-items:center;justify-content:center;gap:14px;}
+
+    .stats {
+      font-size:13px;
+      color:var(--muted);
+      text-align:right;
+      margin-top:-6px;
+    }
+
+    @media (max-width:1000px){
+      .editor-container{ flex-direction:column; padding:16px; }
+      .header-bar{ flex-direction:column; gap:6px; }
+      .middle-panel{ order:3; flex:0 0 auto; max-width:none; width:100%; display:flex; justify-content:center; }
+      .middle-panel .panel-body{ flex-direction:row; padding:8px 0; }
+      .panel-header{ height:40px; }
+      .panel-body{ min-height:360px; }
+      textarea{ min-height:260px; }
+    }
+
+    .footer-note {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 13px;
+      color: var(--muted);
+      font-style: italic;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header bar with title + dark toggle -->
+  <div class="header-bar">
+    <h1>Mini HTML Editor</h1>
+    <button class="toggle-btn" onclick="toggleDarkMode()" id="darkToggle">🌙 Dark</button>
+  </div>
+
+  <div class="editor-container">
+    <!-- Left panel -->
+    <div class="panel left-panel">
+      <div class="panel-body">
+        
+        <!-- Basic toolbar -->
+        <div class="toolbar">
+          <button onclick="wrapText('<p>','</p>')">P</button>
+          <button onclick="wrapText('<b>','</b>')"><b>B</b></button>
+          <button onclick="wrapText('<i>','</i>')"><i>I</i></button>
+          <button onclick="wrapText('<u>','</u>')"><u>U</u></button>
+          <button onclick="wrapText('<br>','')">BR</button>
+          <button onclick="addLink()">🔗</button>
+        </div>
+
+        <!-- Brand toolbar (normal styled links) -->
+        <div class="toolbar">
+          <button class="btn-vw" onclick="addBrandLink('#E11931')">VW Color</button>
+          <button class="btn-adc" onclick="addBrandLink('#F15B46')">ADC Color</button>
+          <button class="btn-wp" onclick="addBrandLink('#CF004F')">WP Color</button>
+       
+          <button class="btn-vw" onclick="addWPLink('#E11931')">VW Link</button>
+          <button class="btn-adc" onclick="addWPLink('#F15B46')">ADC Link</button>
+          <button class="btn-wp" onclick="addWPLink('#CF004F')">WP Link</button>
+        </div>
+
+        <!-- Editor -->
+        <textarea id="editor" oninput="handleInput()" placeholder="Type or paste text here..."></textarea>
+        <div id="stats" class="stats">Words: 0 | Characters: 0</div>
+
+        <!-- Copy toolbar -->
+        <div class="toolbar">
+          <button onclick="copyText('normal')">Copy</button>
+          <button onclick="copyText('nospace')">Copy No Spaces</button>
+          <button onclick="copyText('preview')">Copy Preview</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Middle panel -->
+    <div class="panel middle-panel">
+      <div class="panel-body">
+        <button class="control-btn" onclick="undo()">Undo</button>
+        <button class="control-btn" onclick="redo()">Redo</button>
+      </div>
+    </div>
+
+    <!-- Right panel -->
+    <div class="panel right-panel">
+      <div class="panel-header"><h3>Preview</h3></div>
+      <div class="panel-body">
+        <div id="preview" class="preview" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let history = [];
+    let historyIndex = -1;
+    const editor = document.getElementById('editor');
+    const preview = document.getElementById('preview');
+    const stats = document.getElementById('stats');
+    const toggleBtn = document.getElementById('darkToggle');
+    const MAX_HISTORY = 100;
+
+    function saveHistory() {
+      const v = editor.value;
+      if (historyIndex === -1 || history[historyIndex] !== v) {
+        history = history.slice(0, historyIndex + 1);
+        history.push(v);
+        historyIndex++;
+        if (history.length > MAX_HISTORY) {
+          history.shift();
+          historyIndex--;
+        }
+      }
+    }
+
+    function undo() {
+      if (historyIndex > 0) {
+        historyIndex--;
+        editor.value = history[historyIndex];
+        updatePreview(false);
+      }
+    }
+
+    function redo() {
+      if (historyIndex < history.length - 1) {
+        historyIndex++;
+        editor.value = history[historyIndex];
+        updatePreview(false);
+      }
+    }
+
+    function wrapText(before, after) {
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const selected = editor.value.substring(start, end);
+
+      let newText;
+      if (selected.length > 0) {
+        newText = editor.value.substring(0, start) + before + selected + after + editor.value.substring(end);
+      } else {
+        newText = editor.value.substring(0, start) + before + after + editor.value.substring(end);
+      }
+      editor.value = newText;
+      saveHistory();
+      updatePreview(true);
+      editor.focus();
+    }
+
+    function addLink() {
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const selected = editor.value.substring(start, end) || "here";
+
+      const newText =
+        editor.value.substring(0, start) +
+        '<a href="#">' + selected + '</a>' +
+        editor.value.substring(end);
+
+      editor.value = newText;
+      saveHistory();
+      updatePreview(true);
+      editor.focus();
+    }
+
+    function addBrandLink(color) {
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const selected = editor.value.substring(start, end) || "here";
+
+      const styledText =
+        editor.value.substring(0, start) +
+        `<a style="color:${color}">` +
+        selected +
+        '</a>' +
+        editor.value.substring(end);
+
+      editor.value = styledText;
+      saveHistory();
+      updatePreview(true);
+      editor.focus();
+    }
+
+    // WP Link (with OfferURL + target="_blank")
+    function addWPLink(color) {
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const selected = editor.value.substring(start, end) || "here";
+
+      const styledText =
+        editor.value.substring(0, start) +
+        `<a href="OfferURL" style="color:${color};text-decoration:underline;font-weight:bold;" target="_blank">` +
+        selected +
+        '</a>' +
+        editor.value.substring(end);
+
+      editor.value = styledText;
+      saveHistory();
+      updatePreview(true);
+      editor.focus();
+    }
+
+    function handleInput() {
+      saveHistory();
+      updatePreview(false);
+    }
+
+    function updatePreview(recordHistory = false) {
+      if (recordHistory) saveHistory();
+      preview.innerHTML = editor.value;
+      updateStats();
+    }
+
+    function copyText(mode) {
+      let text = editor.value;
+      if (mode === 'nospace') {
+        text = text.replace(/\s+/g, "");
+      } else if (mode === 'preview') {
+        text = preview.innerHTML;
+      }
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Copied!");
+      });
+    }
+
+    function updateStats() {
+      const text = editor.value.trim();
+      const words = text.length > 0 ? text.split(/\s+/).length : 0;
+      const chars = text.length;
+      stats.textContent = `Words: ${words} | Characters: ${chars}`;
+    }
+
+    // Dark mode toggle with persistence
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      toggleBtn.textContent = isDark ? "☀️ Light" : "🌙 Dark";
+      localStorage.setItem('editorTheme', isDark ? 'dark' : 'light');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('editorTheme');
+      if (saved === 'dark') {
+        document.body.classList.add('dark-mode');
+        toggleBtn.textContent = "☀️ Light";
+      }
+    });
+
+    saveHistory();
+    updatePreview();
+  </script>
+
+  <div class="footer-note">By Mahendran Selvaraj</div>
+</body>
+</html>

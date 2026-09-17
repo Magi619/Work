@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ticket Builder</title>
+<style>
+:root{--gap:18px;--bg:#f5f7fa;--card-bg:#fff;--accent:#0b76d1}
+html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); color:#111}
+.wrap{display:grid;grid-template-columns:420px 1fr;gap:var(--gap);padding:22px;min-height:100vh;box-sizing:border-box}
+.panel{background:#fff;border-radius:12px;padding:16px;box-shadow:0 6px 18px rgba(20,30,40,.06);}
+.panel h3{margin:0 0 12px;font-size:16px}
+label{display:block;font-size:13px;margin-top:12px;color:#333}
+input[type="text"], input[type="date"], select{width:100%;padding:8px 10px;border:1px solid #e3e6ea;border-radius:8px;font-size:14px;box-sizing:border-box}
+.small{font-size:12px;color:#666;margin-top:6px}
+.preview-area{display:flex;flex-direction:column;gap:12px}
+
+/* NEW CARD STYLE */
+.card.filtered-div {
+  display: block;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e6e9ee;
+  width: 306px;      /* fixed width */
+  height: 383.64px;  /* fixed height */
+}
+
+.card a {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  width: 100%;   /* ⬅️ force full width */
+  height: 100%;
+}
+.card-image {
+  width: 100%;
+  height: 55%; /* ~55% of total height (adjust to match screenshot) */
+  overflow: hidden;
+}
+
+.card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* crop nicely */
+  display: block;
+}
+
+.card-content {
+  width: 100%;              /* fill full width */
+  height: 100%;              /* or auto if you want flexible */
+  padding: 14px;
+  background: #fdf7f2;       /* beige fill */
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+
+.card-content h5 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.card-time {
+  margin: 0 0 6px;
+  color: #c62c3a;
+  font-size: 14px;
+}
+
+.card-location {
+  margin: 0;
+  color: #444;
+  font-size: 14px;
+}
+
+pre{background:#0f1724;color:#e6eef8;padding:12px;border-radius:8px;overflow:auto;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;font-size:13px; height: 300px;}
+.controls{display:flex;gap:8px;margin-top:14px}
+button{padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+button.secondary{background:#434a54}
+@media (max-width:880px){.wrap{grid-template-columns:1fr;padding:12px}.panel{padding:12px}}
+
+.top-right {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  max-width: 480px;
+  background: #fdf7f2;     
+  padding: 16px 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border: 1px solid #e6e9ee;
+  text-align: center;   /* ✅ center text */
+}
+
+.top-right h2 {
+  margin: 0 0 8px;
+  font-size: 26px;         /* slightly smaller than 30px for balance */
+  color: #0b76d1;
+}
+
+.top-right p {
+  margin: 0;
+  font-size: 16px;         /* softer size for body text */
+  line-height: 1.5;
+  color: #444;
+}
+
+
+
+
+
+
+
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="top-right panel">
+  <h2>Ticket Builder Tool</h2>
+  <p>
+    A quick and easy way to generate event ticket HTML cards for your website.  
+    Just enter the details like title, date, time, location, and price, and the tool  
+    will create a styled card preview along with clean HTML markup ready to copy.
+  </p>
+</div>
+
+
+<div class="panel">
+<h3>Inputs</h3>
+
+<label>data-shop
+<select id="inp-shop">
+<option value="south">south</option>
+<option value="midlands">midlands</option>
+</select>
+</label>
+
+<label>product URL (href)
+<input id="inp-href" type="text" value="/product/07774TK" />
+</label>
+
+<label>image URL (src)
+<input id="inp-img" type="text" value="https://images.ctfassets.net/t3zrnw7spzsy/6W6oTdfQwkuaq6PgeHvRcj/1224c00b21f6d9da91a01c6a6ecdeb5a/60_Minute_Wine_School_-_Hersham_Store_.png" />
+</label>
+
+<label>Title
+<input id="inp-title" type="text" value="60 Minute Wine School - Hersham Store" />
+</label>
+
+<label>Date line (first line)
+<input id="inp-date" type="date" value="2025-09-10" />
+</label>
+
+<label>Time line (second line)</label>
+<div style="display:flex; gap:8px; align-items:center;">
+<select id="inp-time-start"></select>
+<select id="inp-time-end"></select>
+<select id="time-format">
+<option value="native-24h">Native 24h (input wheel 24h, output 12h)</option>
+<option value="12h">12h (output 12h)</option>
+</select>
+</div>
+
+<label>Location
+<input list="location-options" id="inp-location" type="text" value="" />
+<datalist id="location-options">
+<option value="Binfield Shop">
+<option value="Hersham Shop">
+<option value="Beaconsfield Shop">
+<option value="Gloucester Shop">
+<option value="Nottingham Shop">
+<option value="Theale Shop">
+<option value="Surbiton Shop">
+<option value="Virginia Water Shop">
+</datalist>
+</label>
+
+<label>Price
+<input id="inp-price" type="text" value="£5 per person" />
+</label>
+
+<div class="controls">
+<button id="btn-copy" title="Copy HTML markup">Copy HTML</button>
+<button id="btn-reset" class="secondary">Reset</button>
+</div>
+<p class="small">Tip: edit any field and the preview & HTML will update automatically.</p>
+<p class="small">By Mahendran Selvaraj.</p>
+</div>
+
+<div class="panel preview-area">
+<h3>Preview</h3>
+<div id="rendered" aria-live="polite"></div>
+<h3>HTML markup</h3>
+<pre id="htmlOut"></pre>
+</div>
+</div>
+
+<script>
+const els = {
+shop: document.getElementById('inp-shop'),
+href: document.getElementById('inp-href'),
+img: document.getElementById('inp-img'),
+title: document.getElementById('inp-title'),
+date: document.getElementById('inp-date'),
+timeStart: document.getElementById('inp-time-start'),
+timeEnd: document.getElementById('inp-time-end'),
+timeFormat: document.getElementById('time-format'),
+location: document.getElementById('inp-location'),
+price: document.getElementById('inp-price'),
+rendered: document.getElementById('rendered'),
+htmlOut: document.getElementById('htmlOut'),
+copyBtn: document.getElementById('btn-copy'),
+resetBtn: document.getElementById('btn-reset')
+};
+
+function escapeHtml(s){
+return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+.replace(/"/g,'&quot;');
+}
+
+function formatDateString(dateValue){
+if(!dateValue) return '';
+const d = new Date(dateValue);
+if(isNaN(d)) return dateValue;
+const options = { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric'};
+return d.toLocaleDateString('en-GB', options);
+}
+
+function formatTime(time, mode) {
+if (!time) return "";
+let [hour, minute] = time.split(":").map(Number);
+if (mode === "12h" || mode === "native-24h") {
+const ampm = hour >= 12 ? "PM" : "AM";
+hour = hour % 12 || 12;
+return `${hour}:${minute.toString().padStart(2,"0")} ${ampm}`;
+} else {
+return `${hour.toString().padStart(2,"0")}:${minute.toString().padStart(2,"0")}`;
+}
+}
+
+// Generate time options every 5 minutes
+function generateTimeOptions(format) {
+const times = [];
+for (let h = 0; h < 24; h++) {
+for (let m = 0; m < 60; m += 5) {
+let hour = h, minute = m;
+let display = "";
+if (format === "24h" || format === "native-24h") {
+display = `${hour.toString().padStart(2,"0")}:${minute.toString().padStart(2,"0")}`;
+} else {
+const ampm = hour >= 12 ? "PM" : "AM";
+hour = hour % 12 || 12;
+display = `${hour}:${minute.toString().padStart(2,"0")} ${ampm}`;
+}
+const value = `${h.toString().padStart(2,"0")}:${m.toString().padStart(2,"0")}`;
+times.push({value, display});
+}
+}
+return times;
+}
+
+function populateTimeSelects() {
+const fmt = els.timeFormat.value;
+const options = generateTimeOptions(fmt);
+[els.timeStart, els.timeEnd].forEach(sel => {
+const current = sel.value || "00:00";
+sel.innerHTML = "";
+options.forEach(opt => {
+const o = document.createElement("option");
+o.value = opt.value;
+o.textContent = opt.display;
+if (opt.value === current) o.selected = true;
+sel.appendChild(o);
+});
+});
+}
+
+function buildHtml(){
+const shop = escapeHtml(els.shop.value.trim());
+const href = escapeHtml(els.href.value.trim());
+const img = escapeHtml(els.img.value.trim());
+const title = escapeHtml(els.title.value.trim());
+const date = formatDateString(els.date.value.trim());
+const start = els.timeStart.value;
+const end = els.timeEnd.value;
+const fmt = els.timeFormat.value;
+const timeStr = (start || end) ? 
+`${start ? formatTime(start, fmt) : '--'} - ${end ? formatTime(end, fmt) : '--'}` : '';
+const location = escapeHtml(els.location.value.trim());
+const price = escapeHtml(els.price.value.trim());
+const html = `<div data-shop="${shop}" class="card filtered-div">
+<a href="${href}">
+<div class="card-image"><img src="${img}" class="img-responsive" alt="" /></div>
+<div class="card-content"> 
+<h5>${title}</h5>
+<p class="card-time">${date}, <br/>${timeStr}</p>
+<p class="card-location">${location} • ${price}</p>
+</div> 
+</a> 
+</div>`;
+return html;
+}
+
+function updateAll(){
+populateTimeSelects();
+const html = buildHtml();
+els.rendered.innerHTML = html;
+els.htmlOut.textContent = html;
+}
+
+['shop','href','img','title','date','timeStart','timeEnd','location','price','timeFormat'].forEach(k=>{
+els[k].addEventListener('input', updateAll);
+els[k].addEventListener('change', updateAll);
+});
+
+els.timeFormat.addEventListener('change', ()=>{ populateTimeSelects(); updateAll(); });
+
+els.copyBtn.addEventListener('click', ()=>{
+navigator.clipboard.writeText(els.htmlOut.textContent).then(()=>{
+els.copyBtn.textContent = 'Copied!';
+setTimeout(()=> els.copyBtn.textContent = 'Copy HTML', 1200);
+}).catch(()=>{ alert('Unable to copy — select the code and copy manually.'); })
+});
+
+els.resetBtn.addEventListener('click', ()=>{
+els.shop.value = 'south';
+els.href.value = '/product/07774TK';
+els.img.value = 'https://images.ctfassets.net/t3zrnw7spzsy/6W6oTdfQwkuaq6PgeHvRcj/1224c00b21f6d9da91a01c6a6ecdeb5a/60_Minute_Wine_School_-_Hersham_Store_.png';
+els.title.value = '60 Minute Wine School - Hersham Store';
+els.date.value = '2025-09-10';
+els.timeStart.value = '19:00';
+els.timeEnd.value = '20:00';
+els.timeFormat.value = 'native-24h';
+els.location.value = '';
+els.price.value = '£5 per person';
+updateAll();
+});
+
+// initial render
+updateAll();
+</script>
+</body>
+</html>

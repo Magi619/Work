@@ -1,0 +1,2368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Gift Page SOP Generator</title>
+
+<style>
+* { box-sizing: border-box; }
+
+:root {
+    --bg: #e9e9e9;
+    --panel: #f7f7f7;
+    --card: #ffffff;
+    --border: #a9a9a9;
+    --border-dark: #777;
+    --text: #222;
+    --muted: #555;
+    --primary: #2f5f8f;
+    --primary-dark: #244b73;
+    --success: #2e6b3b;
+    --success-dark: #23552f;
+    --purple: #6a4d8c;
+    --purple-dark: #543d70;
+    --danger: #9f2d2d;
+    --danger-dark: #7d2222;
+}
+
+html { background: var(--bg); }
+
+body {
+    margin: 0;
+    padding: 18px 16px 34px;
+    font-family: Arial, Helvetica, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+}
+
+.container {
+    max-width: 1120px;
+    margin: 0 auto;
+}
+
+h1 {
+    margin: 0 0 4px;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0;
+    color: #1f1f1f;
+}
+
+.subtitle {
+    color: #555;
+    margin: 0 0 14px;
+    font-size: 12px;
+}
+
+/* CLASSIC PANELS */
+.controls,
+.sop {
+    background: var(--card);
+    border: 1px solid var(--border-dark);
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.16);
+}
+
+.controls {
+    padding: 16px;
+    margin-bottom: 14px;
+}
+
+.sop {
+    padding: 16px;
+}
+
+/* CLASSIC SECTION HEADERS */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: -16px -16px 16px;
+    padding: 8px 12px;
+    background: linear-gradient(#f8f8f8, #e5e5e5);
+    border-bottom: 1px solid var(--border);
+    min-height: 38px;
+}
+
+.section-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #222;
+}
+
+.section-subtitle {
+    margin: 2px 0 0;
+    color: #666;
+    font-size: 11px;
+}
+
+/* INPUTS */
+.input-group {
+    margin-bottom: 13px;
+}
+
+.input-label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #333;
+}
+
+#codeInput,
+#contentsInput,
+#deliveryInput,
+#allergenInput {
+    width: 100%;
+    padding: 8px 9px;
+    border: 1px solid #8c8c8c;
+    border-radius: 2px;
+    font-size: 13px;
+    outline: none;
+    background: #fff;
+    color: #222;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.08);
+    transition: border-color .1s, box-shadow .1s;
+}
+
+#codeInput {
+    font-weight: 700;
+}
+
+#contentsInput,
+#deliveryInput,
+#allergenInput {
+    line-height: 1.45;
+    resize: vertical;
+}
+
+#contentsInput {
+    min-height: 165px;
+    font-family: Consolas, "Courier New", monospace;
+}
+
+#deliveryInput,
+#allergenInput {
+    min-height: 86px;
+}
+
+#codeInput:focus,
+#contentsInput:focus,
+#deliveryInput:focus,
+#allergenInput:focus,
+.saved-search:focus {
+    border-color: #315f8e;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.08), 0 0 0 2px rgba(49,95,142,.15);
+}
+
+/* CLASSIC BUTTONS */
+.button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+button {
+    border: 1px solid #777;
+    border-radius: 3px;
+    padding: 7px 13px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .1s, border-color .1s, box-shadow .1s;
+    box-shadow: 0 1px 1px rgba(0,0,0,.12);
+}
+
+button:hover {
+    transform: none;
+    filter: none;
+}
+
+button:active {
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.18);
+}
+
+.generate,
+.save {
+    background: linear-gradient(#4c78a2, #2f5f8f);
+    border-color: #254b70;
+    color: #fff;
+}
+
+.generate:hover,
+.save:hover {
+    background: linear-gradient(#416d97, #28547f);
+}
+
+.refresh {
+    background: linear-gradient(#fff, #e4e4e4);
+    color: #333;
+    border-color: #888;
+}
+
+.refresh:hover {
+    background: linear-gradient(#fff, #dcdcdc);
+}
+
+.load {
+    background: linear-gradient(#8a6ca8, #6a4d8c);
+    border-color: #533b6e;
+    color: #fff;
+}
+
+.load:hover {
+    background: linear-gradient(#7d619a, #604581);
+}
+
+.delete {
+    background: linear-gradient(#b74a4a, #9f2d2d);
+    border-color: #7c2525;
+    color: #fff;
+}
+
+.delete:hover {
+    background: linear-gradient(#a83e3e, #8d2828);
+}
+
+/* STATUS */
+#status {
+    min-height: 20px;
+    margin-top: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--success);
+}
+
+/* SAVED AREA */
+.saved-section {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid #b5b5b5;
+}
+
+.saved-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #222;
+    margin-bottom: 8px;
+}
+
+.saved-search {
+    width: 100%;
+    padding: 8px 9px;
+    border: 1px solid #8c8c8c;
+    border-radius: 2px;
+    font-size: 12px;
+    outline: none;
+    background: #fff;
+    margin-bottom: 7px;
+}
+
+.saved-search::placeholder {
+    color: #888;
+}
+
+.saved-count {
+    color: #666;
+    font-size: 11px;
+    margin-bottom: 7px;
+}
+
+.saved-toolbar {
+    margin-top: 0 !important;
+    margin-bottom: 7px !important;
+}
+
+.saved-toolbar button {
+    padding: 6px 10px;
+    font-size: 11px;
+}
+
+/* SAVED TABLE */
+.saved-list {
+    overflow-x: auto;
+    border: 1px solid #999;
+    border-radius: 2px;
+}
+
+.saved-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    background: #fff;
+}
+
+.saved-table th,
+.saved-table td {
+    padding: 8px 8px;
+    border-bottom: 1px solid #d3d3d3;
+    border-right: 1px solid #e1e1e1;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.saved-table th:last-child,
+.saved-table td:last-child {
+    border-right: 0;
+}
+
+.saved-table tr:last-child td {
+    border-bottom: 0;
+}
+
+.saved-table th {
+    background: #e6e6e6;
+    color: #333;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .2px;
+}
+
+.saved-table tr:hover td {
+    background: #f6f6f6;
+}
+
+.saved-table .select-cell {
+    width: 38px;
+    text-align: center;
+}
+
+.saved-table input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+    accent-color: #315f8e;
+}
+
+.saved-code {
+    font-weight: 700;
+    color: #222;
+    word-break: break-word;
+}
+
+.saved-date {
+    color: #666;
+    font-size: 11px;
+}
+
+.current-record {
+    outline: 2px solid rgba(49,95,142,.35);
+    outline-offset: -2px;
+    background: #edf3f8;
+}
+
+.loaded-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 5px;
+    border: 1px solid #9bb3ca;
+    border-radius: 2px;
+    background: #dbe7f1;
+    color: #315f8e;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.empty-saved {
+    padding: 18px;
+    color: #666;
+    font-size: 12px;
+    text-align: center;
+}
+
+/* SOP */
+.line {
+    min-height: 31px;
+    display: flex;
+    align-items: center;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 13px;
+}
+
+.label {
+    color: #555;
+}
+
+.copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 7px;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    cursor: pointer;
+    user-select: none;
+    transition: background .1s, border-color .1s;
+}
+
+.copy:hover {
+    transform: none;
+    filter: none;
+    border-color: #b5b5b5;
+}
+
+.page {
+    color: #244e77;
+    background: #e8eef5;
+    border-color: #b6c7d8;
+    font-weight: 700;
+}
+
+.type {
+    color: #60437e;
+    background: #eee9f4;
+    border-color: #c8bdd6;
+    font-weight: 700;
+}
+
+.value {
+    color: #2a6235;
+    background: #e8f1e9;
+    border-color: #b9cfbc;
+}
+
+.dynamic {
+    color: #8a4b13;
+    background: #fbf0e4;
+    border-color: #e0c9ae;
+    font-weight: 700;
+}
+
+.existing {
+    color: #755010;
+    background: #f4e9c9;
+    border: 1px solid #d9c18b;
+    padding: 4px 7px;
+    border-radius: 2px;
+    font-weight: 700;
+}
+
+.product-line {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    color: #2a6235;
+    background: #e8f1e9;
+    border: 1px solid #b9cfbc;
+    padding: 8px 9px;
+    margin: 4px 0;
+    border-radius: 2px;
+    cursor: pointer;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-line;
+    user-select: none;
+}
+
+.product-line:hover {
+    filter: none;
+    background: #deebdf;
+}
+
+.copy.copied,
+.product-line.copied {
+    background: #dbeedc !important;
+    color: #236b30 !important;
+    border: 1px solid #80aa86;
+}
+
+.tick {
+    display: none;
+    color: #267231;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+}
+
+.copy.copied .tick {
+    display: inline;
+}
+
+.product-line .tick {
+    float: right;
+    margin-left: 10px;
+}
+
+.indent1 { padding-left: 26px; }
+.indent2 { padding-left: 52px; }
+
+.brace {
+    color: #777;
+}
+
+.input-generated {
+    color: #1b7183;
+    background: #e7f4f6;
+    border: 1px solid #aed1d7;
+}
+
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 18px;
+    padding-top: 12px;
+    border-top: 1px solid #bcbcbc;
+}
+
+.legend span {
+    padding: 3px 7px;
+    border: 1px solid #c2c2c2;
+    border-radius: 2px;
+    font-size: 10px;
+    font-family: Consolas, monospace;
+}
+
+.legend-page { color: #244e77; background: #e8eef5; }
+.legend-type { color: #60437e; background: #eee9f4; }
+.legend-value { color: #2a6235; background: #e8f1e9; }
+.legend-dynamic { color: #8a4b13; background: #fbf0e4; }
+.legend-existing { color: #755010; background: #f4e9c9; }
+.legend-input { color: #1b7183; background: #e7f4f6; }
+
+/* MOBILE */
+@media (max-width: 700px) {
+    body {
+        padding: 12px 8px 24px;
+    }
+
+    h1 {
+        font-size: 21px;
+    }
+
+    .controls,
+    .sop {
+        padding: 12px;
+        border-radius: 3px;
+    }
+
+    .section-header {
+        margin: -12px -12px 12px;
+    }
+
+    .button-row {
+        flex-direction: column;
+    }
+
+    .button-row button {
+        width: 100%;
+    }
+
+    .saved-table th:nth-child(3),
+    .saved-table td:nth-child(3) {
+        display: none;
+    }
+
+    .saved-table th,
+    .saved-table td {
+        padding: 7px 5px;
+    }
+
+    .saved-table td:last-child {
+        white-space: nowrap;
+    }
+
+    .saved-table td:last-child button {
+        padding: 5px 7px !important;
+        font-size: 10px;
+    }
+
+    .product-line {
+        max-width: 100%;
+        overflow-wrap: anywhere;
+    }
+}
+</style>
+</head>
+
+
+<body>
+
+<div class="container">
+
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <h1>Gift Page SOP Generator</h1>
+
+    <div class="subtitle">
+        Enter the PDP code and paste the required information.
+    </div>
+
+
+    <!-- =====================================================
+         INPUTS
+    ====================================================== -->
+
+    <div class="controls">
+
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">PDP Information</h2>
+                <div class="section-subtitle">Enter the details, then generate or save this PDP.</div>
+            </div>
+        </div>
+
+
+        <!-- PDP CODE -->
+
+        <div class="input-group">
+
+            <label class="input-label">
+                PDP Code
+            </label>
+
+            <input
+                id="codeInput"
+                type="text"
+                placeholder="Example: Q10402"
+                autocomplete="off"
+            >
+
+        </div>
+
+
+        <!-- CONTENTS -->
+
+        <div class="input-group">
+
+            <label class="input-label">
+                Contents / Rich Text
+            </label>
+
+            <textarea
+                id="contentsInput"
+                placeholder="Paste your product list here...
+
+Example:
+
+• 1 x Product A
+• 1 x Product B
+• 1 x Product C
+• Packaged in a Laithwaites Branded Gift Box"
+            ></textarea>
+
+        </div>
+
+
+        <!-- DELIVERY INFO COPY -->
+
+        <div class="input-group">
+
+            <label class="input-label">
+                Delivery Info Copy
+            </label>
+
+            <textarea
+                id="deliveryInput"
+                placeholder="Enter the Delivery Info text here..."
+            ></textarea>
+
+        </div>
+
+
+        <!-- ALLERGEN INFORMATION -->
+
+        <div class="input-group">
+
+            <label class="input-label">
+                Allergens & Nutritional Information
+            </label>
+
+            <textarea
+                id="allergenInput"
+                placeholder="Enter the Allergens & Nutritional Information here..."
+            ></textarea>
+
+        </div>
+
+
+        <!-- BUTTONS -->
+
+        <div class="button-row">
+
+            <button
+                class="generate"
+                onclick="generateSOP()">
+
+                Generate
+
+            </button>
+
+
+            <button
+                class="refresh"
+                onclick="refreshPage()">
+
+                Refresh
+
+            </button>
+
+            <button
+                class="save"
+                onclick="savePDP()">
+
+                Save
+
+            </button>
+
+        </div>
+
+
+        <div class="saved-section">
+            <div class="saved-title">Saved PDP Codes</div>
+
+            <input
+                id="savedSearch"
+                class="saved-search"
+                type="text"
+                placeholder="Search PDP Code..."
+                autocomplete="off"
+                oninput="renderSavedPDPs()"
+            >
+
+            <div id="savedCount" class="saved-count"></div>
+
+            <div class="button-row saved-toolbar" style="margin-top: 0; margin-bottom: 10px;">
+                <button class="load" type="button" onclick="selectAllSavedPDPs()">Select All</button>
+                <button class="load" type="button" onclick="clearSelectedSavedPDPs()">Clear Selection</button>
+                <button class="delete" type="button" onclick="deleteSelectedPDPs()">Delete Selected</button>
+                <button class="save" type="button" onclick="exportPDPBackup()">Export All</button>
+                <button class="load" type="button" onclick="document.getElementById('importFile').click()">Import Backup</button>
+                <input id="importFile" type="file" accept=".json,application/json" style="display:none" onchange="importPDPBackup(event)">
+            </div>
+
+            <div class="button-row saved-toolbar" style="margin-top: 0; margin-bottom: 10px;">
+                <button class="load" type="button" onclick="loadSelectedPDP()">Load Selected</button>
+                <button class="save" type="button" onclick="updateLoadedPDP()">Update Loaded</button>
+                <button class="refresh" type="button" onclick="clearFormOnly()">Clear Form</button>
+            </div>
+
+            <div id="savedList" class="saved-list"></div>
+        </div>
+
+        <div id="status"></div>
+
+    </div>
+
+
+    <!-- =====================================================
+         SOP OUTPUT
+    ====================================================== -->
+
+    <div class="sop" id="sop">
+
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">SOP Output</h2>
+                <div class="section-subtitle">Click any highlighted item to copy it.</div>
+            </div>
+        </div>
+
+        <div class="label">
+            Enter the information above, then click Generate.
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+
+/* =========================================================
+   COPY FUNCTION
+========================================================= */
+
+function copyText(element, text) {
+
+    const textarea =
+        document.createElement("textarea");
+
+    textarea.value = text;
+
+    textarea.style.position = "fixed";
+    textarea.style.left = "-999999px";
+    textarea.style.top = "-999999px";
+
+    document.body.appendChild(textarea);
+
+    textarea.focus();
+
+    textarea.select();
+
+    textarea.setSelectionRange(
+        0,
+        textarea.value.length
+    );
+
+    let success = false;
+
+    try {
+
+        success =
+            document.execCommand("copy");
+
+    } catch (error) {
+
+        success = false;
+
+    }
+
+    document.body.removeChild(textarea);
+
+
+    if (success) {
+
+        element.classList.add("copied");
+
+    } else {
+
+        alert(
+            "Automatic copy was blocked. Please press Ctrl+C."
+        );
+
+    }
+}
+
+
+/* =========================================================
+   CREATE COPYABLE ITEM
+========================================================= */
+
+function createCopyItem(text, type) {
+
+    const div =
+        document.createElement("div");
+
+    div.className =
+        "line";
+
+
+    const span =
+        document.createElement("span");
+
+    span.className =
+        "copy " + type;
+
+    span.textContent =
+        text;
+
+
+    const tick =
+        document.createElement("span");
+
+    tick.className =
+        "tick";
+
+    tick.textContent =
+        "✓";
+
+
+    span.appendChild(tick);
+
+
+    span.addEventListener(
+        "click",
+        function(event) {
+
+            event.stopPropagation();
+
+            copyText(
+                span,
+                text
+            );
+
+        }
+    );
+
+
+    div.appendChild(span);
+
+
+    return div;
+}
+
+
+/* =========================================================
+   CREATE NON-COPYABLE LABEL
+========================================================= */
+
+function createLabel(text, indent = 0) {
+
+    const div =
+        document.createElement("div");
+
+    div.className =
+        "line label";
+
+
+    if (indent === 1) {
+
+        div.classList.add("indent1");
+
+    }
+
+
+    if (indent === 2) {
+
+        div.classList.add("indent2");
+
+    }
+
+
+    div.textContent =
+        text;
+
+
+    return div;
+}
+
+
+/* =========================================================
+   CREATE EXISTING
+   NOT COPYABLE
+========================================================= */
+
+function createExisting(indent = 0) {
+
+    const div =
+        document.createElement("div");
+
+    div.className =
+        "line";
+
+
+    const span =
+        document.createElement("span");
+
+    span.className =
+        "existing";
+
+    span.textContent =
+        "Existing";
+
+
+    if (indent === 1) {
+
+        span.style.marginLeft =
+            "28px";
+
+    }
+
+
+    div.appendChild(span);
+
+
+    return div;
+}
+
+
+/* =========================================================
+   CREATE BRACE
+========================================================= */
+
+function createBrace(text) {
+
+    const div =
+        document.createElement("div");
+
+    div.className =
+        "line brace";
+
+    div.textContent =
+        text;
+
+    return div;
+}
+
+
+/* =========================================================
+   CLEAN CONTENTS
+========================================================= */
+
+function cleanContents(text) {
+
+    return text
+
+        .split(/\r?\n/)
+
+        .map(function(line) {
+
+            line =
+                line.trim();
+
+
+            /*
+                Remove bullet characters.
+            */
+
+            line =
+                line.replace(
+                    /^[•●▪◦‣*-]\s*/,
+                    ""
+                );
+
+
+            /*
+                Remove quote at beginning.
+            */
+
+            line =
+                line.replace(
+                    /^["“”]\s*/,
+                    ""
+                );
+
+
+            /*
+                Remove quote at end.
+            */
+
+            line =
+                line.replace(
+                    /\s*["“”]$/,
+                    ""
+                );
+
+
+            return line.trim();
+
+        })
+
+
+        .filter(function(line) {
+
+            return line.length > 0;
+
+        });
+
+}
+
+
+/* =========================================================
+   CREATE CONTENTS BLOCK
+   WHOLE BLOCK = ONE COPY
+========================================================= */
+
+function createContentsBlock(lines) {
+
+    const completeText =
+        lines.join("\n");
+
+
+    const div =
+        document.createElement("div");
+
+    div.className =
+        "line";
+
+
+    const span =
+        document.createElement("div");
+
+    span.className =
+        "product-line";
+
+
+    span.textContent =
+        completeText;
+
+
+    const tick =
+        document.createElement("span");
+
+    tick.className =
+        "tick";
+
+    tick.textContent =
+        "✓";
+
+
+    span.appendChild(tick);
+
+
+    span.addEventListener(
+        "click",
+        function(event) {
+
+            event.stopPropagation();
+
+            copyText(
+                span,
+                completeText
+            );
+
+        }
+    );
+
+
+    div.appendChild(span);
+
+
+    return div;
+}
+
+
+/* =========================================================
+   GENERATE SOP
+========================================================= */
+
+function generateSOP() {
+
+    const code =
+        document
+        .getElementById("codeInput")
+        .value
+        .trim();
+
+
+    const contentsText =
+        document
+        .getElementById("contentsInput")
+        .value;
+
+
+    const deliveryText =
+        document
+        .getElementById("deliveryInput")
+        .value
+        .trim();
+
+
+    const allergenText =
+        document
+        .getElementById("allergenInput")
+        .value
+        .trim();
+
+
+    const sop =
+        document
+        .getElementById("sop");
+
+
+    const status =
+        document
+        .getElementById("status");
+
+
+    /* =====================================================
+       VALIDATION
+    ====================================================== */
+
+    if (!code) {
+
+        status.textContent =
+            "Please enter the PDP Code.";
+
+        document
+            .getElementById("codeInput")
+            .focus();
+
+        return;
+    }
+
+
+    if (!contentsText.trim()) {
+
+        status.textContent =
+            "Please enter the Contents / Rich Text.";
+
+        document
+            .getElementById("contentsInput")
+            .focus();
+
+        return;
+    }
+
+
+    if (!deliveryText) {
+
+        status.textContent =
+            "Please enter the Delivery Info Copy.";
+
+        document
+            .getElementById("deliveryInput")
+            .focus();
+
+        return;
+    }
+
+
+    if (!allergenText) {
+
+        status.textContent =
+            "Please enter the Allergens & Nutritional Information.";
+
+        document
+            .getElementById("allergenInput")
+            .focus();
+
+        return;
+    }
+
+
+    status.textContent = "";
+
+    sop.innerHTML = "";
+
+
+    /* =====================================================
+       CONTENT PAGE
+    ====================================================== */
+
+    sop.appendChild(
+        createCopyItem(
+            "Content Page",
+            "page"
+        )
+    );
+
+
+    /* =====================================================
+       ENTRY
+    ====================================================== */
+
+    sop.appendChild(
+        createLabel(
+            "Entry"
+        )
+    );
+
+
+    sop.appendChild(
+        createCopyItem(
+            "PDP - " + code,
+            "dynamic"
+        )
+    );
+
+
+    /* =====================================================
+       SLUG
+    ====================================================== */
+
+    sop.appendChild(
+        createLabel(
+            "Slug"
+        )
+    );
+
+
+    sop.appendChild(
+        createCopyItem(
+            code,
+            "dynamic"
+        )
+    );
+
+
+    /* =====================================================
+       LAYOUT
+    ====================================================== */
+
+    sop.appendChild(
+        createLabel("")
+    );
+
+
+    sop.appendChild(
+        createLabel(
+            "Layout"
+        )
+    );
+
+
+    /* =====================================================
+       CONTAINER
+    ====================================================== */
+
+    sop.appendChild(
+        createCopyItem(
+            "Container",
+            "type"
+        )
+    );
+
+
+    sop.appendChild(
+        createCopyItem(
+            "Contents & Delivery Info Container - " + code,
+            "dynamic"
+        )
+    );
+
+
+    /* =====================================================
+       CONTENT
+    ====================================================== */
+
+    sop.appendChild(
+        createLabel(
+            "Content"
+        )
+    );
+
+
+    /* =====================================================
+       COLUMN GROUP
+    ====================================================== */
+
+    sop.appendChild(
+        createCopyItem(
+            "Column Group",
+            "type"
+        )
+    );
+
+
+    sop.appendChild(
+        createCopyItem(
+            "Contents & Delivery Info Column Group - " + code,
+            "dynamic"
+        )
+    );
+
+
+    /* =====================================================
+       COLUMN
+    ====================================================== */
+
+    sop.appendChild(
+        createCopyItem(
+            "Column",
+            "type"
+        )
+    );
+
+
+    /* =====================================================
+       CONTENTS COLUMN
+    ====================================================== */
+
+    sop.appendChild(
+        createCopyItem(
+            "Contents Column - " + code,
+            "dynamic"
+        )
+    );
+
+
+    /* =====================================================
+       MOBILE WIDTH
+    ====================================================== */
+
+    sop.appendChild(
+        createLabel(
+            "Mobile width = 12"
+        )
+    );
+
+
+    /* =====================================================
+       DESKTOP WIDTH
+    ====================================================== */
+
+    sop.appendChild(
+        createLabel(
+            "Desktop width = 6"
+        )
+    );
+
+
+    /* =====================================================
+       {
+    ====================================================== */
+
+    sop.appendChild(
+        createBrace(
+            "{"
+        )
+    );
+
+
+    /* =====================================================
+       EXISTING
+    ====================================================== */
+
+    sop.appendChild(
+        createExisting(
+            1
+        )
+    );
+
+
+    /* =====================================================
+       CONTENTS PDP TITLE
+    ====================================================== */
+
+    sop.appendChild(
+        createCopyItem(
+            "Contents PDP title",
+            "value"
+        )
+    );
+
+
+    /* =====================================================
+       RICH TEXT
+    ====================================================== */
+
+    sop.appendChild(
+        createCopyItem(
+            "Rich Text",
+            "type"
+        )
+    );
+
+
+    /* =====================================================
+       CONTENTS COPY - Q10402
+    ====================================================== */
+
+    sop.appendChild(
+        createCopyItem(
+            "Contents copy - " + code,
+            "type"
+        )
+    );
+
+
+    /* =====================================================
+       CONTENTS FROM INPUT
+       ONE SINGLE COPYABLE BLOCK
+    ====================================================== */
+
+    const productLines =
+        cleanContents(
+            contentsText
+        );
+
+
+    sop.appendChild(
+        createContentsBlock(
+            productLines
+        )
+    );
+
+
+    /* =====================================================
+       ALLERGENS & NUTRITIONAL INFORMATION
+    ====================================================== */
+
+    sop.appendChild(
+        createCopyItem(
+            "Allergens & Nutritional Information (PDF)",
+            "value"
+        )
+    );
+
+
+    /* =====================================================
+       ALLERGEN INPUT
+       ONE SINGLE COPYABLE BLOCK
+    ====================================================== */
+
+    const allergenLines =
+        cleanContents(
+            allergenText
+        );
+
+
+    if (allergenLines.length > 0) {
+
+        sop.appendChild(
+            createContentsBlock(
+                allergenLines
+            )
+        );
+
+    }
+
+
+    /* =====================================================
+       EXISTING
+    ====================================================== */
+
+    sop.appendChild(
+        createExisting(
+            1
+        )
+    );
+
+
+    /* =====================================================
+       HTML
+    ====================================================== */
+
+    sop.appendChild(
+        createCopyItem(
+            "HTML - Gifts allergen link alignment fix",
+            "value"
+        )
+    );
+
+
+    /* =====================================================
+       }
+    ====================================================== */
+
+    sop.appendChild(
+        createBrace(
+            "}"
+        )
+    );
+
+
+    /* =====================================================
+       {
+    ====================================================== */
+
+    sop.appendChild(
+        createBrace(
+            "{"
+        )
+    );
+
+   sop.appendChild(
+        createLabel(
+            "Back to Contents & Delivery Info Column Group - "+ code,
+        )
+    );
+    /* =====================================================
+       DELIVERY INFO COLUMN
+    ====================================================== */
+
+    sop.appendChild(
+        createCopyItem(
+            "Delivery Info Column - " + code,
+            "type"
+        )
+    );
+
+
+    /* =====================================================
+       MOBILE WIDTH
+    ====================================================== */
+
+    sop.appendChild(
+        createLabel(
+            "Mobile width = 12"
+        )
+    );
+
+
+    /* =====================================================
+       DESKTOP WIDTH
+    ====================================================== */
+
+    sop.appendChild(
+        createLabel(
+            "Desktop width = 6"
+        )
+    );
+
+
+    /* =====================================================
+       EXISTING
+    ====================================================== */
+
+    sop.appendChild(
+        createExisting(
+            1
+        )
+    );
+
+
+    /* =====================================================
+       DELIVERY INFO PDP TITLE
+    ====================================================== */
+
+    sop.appendChild(
+        createCopyItem(
+            "Delivery Info PDP title",
+            "value"
+        )
+    );
+
+
+    /* =====================================================
+       RICH TEXT
+    ====================================================== */
+
+    sop.appendChild(
+        createCopyItem(
+            "Rich Text",
+            "type"
+        )
+    );
+
+
+    /* =====================================================
+       DELIVERY INFO COPY
+    ====================================================== */
+
+    sop.appendChild(
+        createCopyItem(
+            "Delivery Info Copy -",
+            "type"
+        )
+    );
+
+
+    /* =====================================================
+       DELIVERY INPUT
+       COPYABLE
+    ====================================================== */
+
+    sop.appendChild(
+        createCopyItem(
+            deliveryText,
+            "input-generated"
+        )
+    );
+
+
+    /* =====================================================
+       }
+    ====================================================== */
+
+    sop.appendChild(
+        createBrace(
+            "}"
+        )
+    );
+
+
+    /* =====================================================
+       LEGEND
+    ====================================================== */
+
+    const legend =
+        document.createElement("div");
+
+
+    legend.className =
+        "legend";
+
+
+    legend.innerHTML = `
+
+        <span class="legend-page">
+            Page
+        </span>
+
+        <span class="legend-type">
+            Content Type
+        </span>
+
+        <span class="legend-value">
+            Value
+        </span>
+
+        <span class="legend-dynamic">
+            Dynamic
+        </span>
+
+        <span class="legend-input">
+            Input Content
+        </span>
+
+        <span class="legend-existing">
+            Existing / Not Copyable
+        </span>
+
+    `;
+
+
+    sop.appendChild(
+        legend
+    );
+
+}
+
+
+/* =========================================================
+   SAVED PDP CODES
+   Persistent browser storage + search + multi-select +
+   update + import/export + current-work recovery.
+========================================================= */
+
+const STORAGE_KEY = "giftPageSOP_savedPDPs";
+const DRAFT_KEY = "giftPageSOP_currentDraft";
+
+let loadedPDPCode = null;
+
+function getSavedPDPs() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        return saved ? JSON.parse(saved) : {};
+    } catch (error) {
+        console.error("Could not read saved PDPs:", error);
+        return {};
+    }
+}
+
+function writeSavedPDPs(data) {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        return true;
+    } catch (error) {
+        console.error("Could not save PDPs:", error);
+        alert("Unable to save data in this browser.");
+        return false;
+    }
+}
+
+function getCurrentFormData() {
+    return {
+        code: document.getElementById("codeInput").value.trim(),
+        contents: document.getElementById("contentsInput").value,
+        delivery: document.getElementById("deliveryInput").value,
+        allergen: document.getElementById("allergenInput").value
+    };
+}
+
+function saveDraft() {
+    try {
+        const data = getCurrentFormData();
+
+        if (!data.code && !data.contents && !data.delivery && !data.allergen) {
+            localStorage.removeItem(DRAFT_KEY);
+            return;
+        }
+
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+            ...data,
+            savedAt: new Date().toISOString()
+        }));
+    } catch (error) {
+        console.error("Could not save current draft:", error);
+    }
+}
+
+function restoreDraft() {
+    try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (!raw) {
+            return;
+        }
+
+        const draft = JSON.parse(raw);
+
+        if (!draft.code && !draft.contents && !draft.delivery && !draft.allergen) {
+            return;
+        }
+
+        const shouldRestore = confirm(
+            "Unsaved work was found from your previous session.\n\n" +
+            "Do you want to restore it?"
+        );
+
+        if (!shouldRestore) {
+            return;
+        }
+
+        document.getElementById("codeInput").value = draft.code || "";
+        document.getElementById("contentsInput").value = draft.contents || "";
+        document.getElementById("deliveryInput").value = draft.delivery || "";
+        document.getElementById("allergenInput").value = draft.allergen || "";
+
+        document.getElementById("status").textContent =
+            "Previous unsaved work restored.";
+    } catch (error) {
+        console.error("Could not restore draft:", error);
+    }
+}
+
+function clearDraft() {
+    try {
+        localStorage.removeItem(DRAFT_KEY);
+    } catch (error) {
+        console.error("Could not clear draft:", error);
+    }
+}
+
+function savePDP() {
+    const data = getCurrentFormData();
+    const status = document.getElementById("status");
+
+    if (!data.code) {
+        status.textContent = "Please enter a PDP Code before saving.";
+        document.getElementById("codeInput").focus();
+        return;
+    }
+
+    const saved = getSavedPDPs();
+    const exists = Object.prototype.hasOwnProperty.call(saved, data.code);
+
+    if (exists) {
+        const overwrite = confirm(
+            'A saved PDP Code "' + data.code +
+            '" already exists.\n\nDo you want to replace it?'
+        );
+
+        if (!overwrite) {
+            return;
+        }
+    }
+
+    saved[data.code] = {
+        ...data,
+        savedAt: exists && saved[data.code].savedAt
+            ? saved[data.code].savedAt
+            : new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+
+    if (writeSavedPDPs(saved)) {
+        loadedPDPCode = data.code;
+        clearDraft();
+        status.textContent = exists
+            ? 'PDP Code "' + data.code + '" updated successfully.'
+            : 'PDP Code "' + data.code + '" saved successfully.';
+        renderSavedPDPs();
+    }
+}
+
+function loadPDP(code) {
+    const saved = getSavedPDPs();
+    const item = saved[code];
+
+    if (!item) {
+        alert('Saved PDP Code "' + code + '" was not found.');
+        renderSavedPDPs();
+        return;
+    }
+
+    document.getElementById("codeInput").value = item.code || code;
+    document.getElementById("contentsInput").value = item.contents || "";
+    document.getElementById("deliveryInput").value = item.delivery || "";
+    document.getElementById("allergenInput").value = item.allergen || "";
+
+    loadedPDPCode = code;
+    clearDraft();
+
+    document.getElementById("status").textContent =
+        'PDP Code "' + code + '" loaded successfully.';
+
+    generateSOP();
+    renderSavedPDPs();
+}
+
+function loadSelectedPDP() {
+    const selected = getSelectedPDPs();
+
+    if (selected.length === 0) {
+        alert("Please select one PDP Code to load.");
+        return;
+    }
+
+    if (selected.length > 1) {
+        alert(
+            "Please select only ONE PDP Code to load into the form.\n\n" +
+            "You can select multiple records for Delete Selected or Export Selected."
+        );
+        return;
+    }
+
+    loadPDP(selected[0]);
+}
+
+function updateLoadedPDP() {
+    if (!loadedPDPCode) {
+        alert("Load a saved PDP Code first, then make your changes.");
+        return;
+    }
+
+    const data = getCurrentFormData();
+
+    if (!data.code) {
+        alert("PDP Code cannot be empty.");
+        return;
+    }
+
+    const saved = getSavedPDPs();
+
+    if (!saved[loadedPDPCode]) {
+        alert("The previously loaded PDP Code no longer exists.");
+        loadedPDPCode = null;
+        renderSavedPDPs();
+        return;
+    }
+
+    if (data.code !== loadedPDPCode &&
+        Object.prototype.hasOwnProperty.call(saved, data.code)) {
+        const overwrite = confirm(
+            'PDP Code "' + data.code +
+            '" already exists.\n\nDo you want to replace it?'
+        );
+
+        if (!overwrite) {
+            return;
+        }
+    }
+
+    if (data.code !== loadedPDPCode) {
+        delete saved[loadedPDPCode];
+    }
+
+    saved[data.code] = {
+        ...data,
+        savedAt: saved[loadedPDPCode]?.savedAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+
+    if (writeSavedPDPs(saved)) {
+        loadedPDPCode = data.code;
+        clearDraft();
+        document.getElementById("status").textContent =
+            'PDP Code "' + data.code + '" updated successfully.';
+        renderSavedPDPs();
+    }
+}
+
+function deletePDP(code) {
+    const saved = getSavedPDPs();
+
+    if (!Object.prototype.hasOwnProperty.call(saved, code)) {
+        renderSavedPDPs();
+        return;
+    }
+
+    const confirmed = confirm(
+        'Delete saved PDP Code "' + code + '"?\n\nThis cannot be undone.'
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    delete saved[code];
+
+    if (writeSavedPDPs(saved)) {
+        if (loadedPDPCode === code) {
+            loadedPDPCode = null;
+        }
+
+        document.getElementById("status").textContent =
+            'PDP Code "' + code + '" deleted.';
+        renderSavedPDPs();
+    }
+}
+
+function getSelectedPDPs() {
+    return Array.from(
+        document.querySelectorAll(".saved-checkbox:checked")
+    ).map(function(checkbox) {
+        return checkbox.dataset.code;
+    });
+}
+
+function selectAllSavedPDPs() {
+    document.querySelectorAll(".saved-checkbox").forEach(function(checkbox) {
+        checkbox.checked = true;
+    });
+}
+
+function clearSelectedSavedPDPs() {
+    document.querySelectorAll(".saved-checkbox").forEach(function(checkbox) {
+        checkbox.checked = false;
+    });
+}
+
+function deleteSelectedPDPs() {
+    const selected = getSelectedPDPs();
+
+    if (selected.length === 0) {
+        alert("Please select at least one PDP Code.");
+        return;
+    }
+
+    const confirmed = confirm(
+        "Delete " + selected.length + " selected PDP Code(s)?\n\n" +
+        "This cannot be undone."
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    const saved = getSavedPDPs();
+
+    selected.forEach(function(code) {
+        delete saved[code];
+
+        if (loadedPDPCode === code) {
+            loadedPDPCode = null;
+        }
+    });
+
+    if (writeSavedPDPs(saved)) {
+        document.getElementById("status").textContent =
+            selected.length + " PDP Code(s) deleted.";
+        renderSavedPDPs();
+    }
+}
+
+function getFilteredSavedCodes() {
+    const saved = getSavedPDPs();
+    const searchInput = document.getElementById("savedSearch");
+
+    const search = searchInput
+        ? searchInput.value.trim().toLowerCase()
+        : "";
+
+    return Object.keys(saved)
+        .filter(function(code) {
+            return code.toLowerCase().includes(search);
+        })
+        .sort(function(a, b) {
+            const aTime = saved[a].updatedAt || saved[a].savedAt || "";
+            const bTime = saved[b].updatedAt || saved[b].savedAt || "";
+            return bTime.localeCompare(aTime);
+        });
+}
+
+function formatSavedDate(dateString) {
+    if (!dateString) {
+        return "";
+    }
+
+    const date = new Date(dateString);
+
+    if (isNaN(date.getTime())) {
+        return "";
+    }
+
+    return date.toLocaleString();
+}
+
+function renderSavedPDPs() {
+    const list = document.getElementById("savedList");
+    const count = document.getElementById("savedCount");
+
+    if (!list) {
+        return;
+    }
+
+    const saved = getSavedPDPs();
+    const allCodes = Object.keys(saved);
+    const filteredCodes = getFilteredSavedCodes();
+
+    list.innerHTML = "";
+
+    if (count) {
+        count.textContent =
+            filteredCodes.length + " shown / " +
+            allCodes.length + " saved";
+    }
+
+    if (allCodes.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "empty-saved";
+        empty.textContent = "No saved PDP Codes yet.";
+        list.appendChild(empty);
+        return;
+    }
+
+    if (filteredCodes.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "empty-saved";
+        empty.textContent = "No PDP Code matches your search.";
+        list.appendChild(empty);
+        return;
+    }
+
+    const table = document.createElement("table");
+    table.className = "saved-table";
+
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th class="select-cell">
+                    <input type="checkbox" id="selectVisiblePDPs"
+                           title="Select visible PDP Codes">
+                </th>
+                <th>PDP Code</th>
+                <th>Last Updated</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+
+    const tbody = table.querySelector("tbody");
+
+    filteredCodes.forEach(function(code) {
+        const item = saved[code];
+        const row = document.createElement("tr");
+
+        if (loadedPDPCode === code) {
+            row.className = "current-record";
+        }
+
+        const selectCell = document.createElement("td");
+        selectCell.className = "select-cell";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "saved-checkbox";
+        checkbox.dataset.code = code;
+
+        selectCell.appendChild(checkbox);
+
+        const codeCell = document.createElement("td");
+        const codeName = document.createElement("span");
+        codeName.className = "saved-code";
+        codeName.textContent = code;
+        codeCell.appendChild(codeName);
+
+        if (loadedPDPCode === code) {
+            const badge = document.createElement("span");
+            badge.className = "loaded-badge";
+            badge.textContent = "Loaded";
+            codeCell.appendChild(badge);
+        }
+
+        const dateCell = document.createElement("td");
+        dateCell.className = "saved-date";
+        dateCell.textContent =
+            formatSavedDate(item.updatedAt || item.savedAt);
+
+        const actionCell = document.createElement("td");
+
+        const loadButton = document.createElement("button");
+        loadButton.className = "load";
+        loadButton.type = "button";
+        loadButton.textContent = "Load";
+        loadButton.style.padding = "7px 11px";
+        loadButton.style.marginRight = "5px";
+        loadButton.addEventListener("click", function() {
+            loadPDP(code);
+        });
+
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "delete";
+        deleteButton.type = "button";
+        deleteButton.textContent = "Delete";
+        deleteButton.style.padding = "7px 11px";
+        deleteButton.addEventListener("click", function() {
+            deletePDP(code);
+        });
+
+        actionCell.appendChild(loadButton);
+        actionCell.appendChild(deleteButton);
+
+        row.appendChild(selectCell);
+        row.appendChild(codeCell);
+        row.appendChild(dateCell);
+        row.appendChild(actionCell);
+
+        tbody.appendChild(row);
+    });
+
+    list.appendChild(table);
+
+    const selectVisible = document.getElementById("selectVisiblePDPs");
+
+    if (selectVisible) {
+        selectVisible.addEventListener("change", function() {
+            table.querySelectorAll(".saved-checkbox").forEach(function(cb) {
+                cb.checked = selectVisible.checked;
+            });
+        });
+    }
+}
+
+function exportPDPBackup() {
+    const saved = getSavedPDPs();
+    const codes = Object.keys(saved);
+
+    if (codes.length === 0) {
+        alert("There are no saved PDP Codes to export.");
+        return;
+    }
+
+    const backup = {
+        app: "Gift Page SOP Generator",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        records: saved
+    };
+
+    const blob = new Blob(
+        [JSON.stringify(backup, null, 2)],
+        { type: "application/json" }
+    );
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    const date = new Date().toISOString()
+        .slice(0, 10)
+        .replace(/-/g, "");
+
+    link.href = url;
+    link.download = "PDP_Backup_" + date + ".json";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+
+    document.getElementById("status").textContent =
+        codes.length + " PDP Code(s) exported successfully.";
+}
+
+function importPDPBackup(event) {
+    const file = event.target.files[0];
+
+    if (!file) {
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        try {
+            const imported = JSON.parse(e.target.result);
+
+            const records = imported.records || imported;
+
+            if (!records || typeof records !== "object" || Array.isArray(records)) {
+                throw new Error("Invalid backup format.");
+            }
+
+            const existing = getSavedPDPs();
+            const importedCodes = Object.keys(records);
+
+            if (importedCodes.length === 0) {
+                alert("The backup does not contain any PDP Codes.");
+                return;
+            }
+
+            const confirmed = confirm(
+                "Import " + importedCodes.length +
+                " PDP Code(s)?\n\n" +
+                "Existing PDP Codes with the same name will be replaced."
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            importedCodes.forEach(function(code) {
+                const record = records[code];
+
+                if (!record || typeof record !== "object") {
+                    return;
+                }
+
+                existing[code] = {
+                    code: record.code || code,
+                    contents: record.contents || "",
+                    delivery: record.delivery || "",
+                    allergen: record.allergen || "",
+                    savedAt: record.savedAt || new Date().toISOString(),
+                    updatedAt: record.updatedAt || new Date().toISOString()
+                };
+            });
+
+            if (writeSavedPDPs(existing)) {
+                document.getElementById("status").textContent =
+                    importedCodes.length +
+                    " PDP Code(s) imported successfully.";
+                renderSavedPDPs();
+            }
+        } catch (error) {
+            alert(
+                "Could not import the backup.\n\n" +
+                "Please select a valid PDP backup JSON file."
+            );
+            console.error(error);
+        } finally {
+            event.target.value = "";
+        }
+    };
+
+    reader.readAsText(file);
+}
+
+function clearFormOnly() {
+    document.getElementById("codeInput").value = "";
+    document.getElementById("contentsInput").value = "";
+    document.getElementById("deliveryInput").value = "";
+    document.getElementById("allergenInput").value = "";
+
+    loadedPDPCode = null;
+    clearDraft();
+
+    document.getElementById("status").textContent = "";
+
+    document.getElementById("sop").innerHTML = `
+        <div class="label">
+            Enter the information above, then click Generate.
+        </div>
+    `;
+
+    document.getElementById("codeInput").focus();
+}
+
+/* =========================================================
+   REFRESH
+========================================================= */
+
+function refreshPage() {
+    clearFormOnly();
+}
+
+
+
+/* =========================================================
+   ENTER KEY
+========================================================= */
+
+// Load the saved PDP Code list when the page opens.
+renderSavedPDPs();
+
+// Persist the current form as a draft while the user is typing.
+["codeInput", "contentsInput", "deliveryInput", "allergenInput"].forEach(function(id) {
+    document.getElementById(id).addEventListener("input", saveDraft);
+});
+
+// Restore saved list and, if available, previous unsaved work.
+renderSavedPDPs();
+restoreDraft();
+
+document
+    .getElementById("codeInput")
+    .addEventListener(
+        "keydown",
+        function(event) {
+
+            if (event.key === "Enter") {
+
+                generateSOP();
+
+            }
+
+        }
+    );
+
+</script>
+
+</body>
+</html>

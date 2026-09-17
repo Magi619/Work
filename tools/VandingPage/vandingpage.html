@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HTML Snippet Builder — Working Dual Split</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+  <style>
+    :root { --panel-bg: #fff; --muted-border: #ccc; }
+
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      padding: 20px;
+      height: 100vh;
+      box-sizing: border-box;
+      transition: background 0.25s, color 0.25s;
+    }
+    body.light { background: #f4f4f4; color: #222; }
+    body.dark  { background: #1e1e1e; color: #ddd; }
+
+    /* Left & right panels */
+    .inputs {
+      flex: 0 0 32%;
+      min-width: 220px;
+      max-width: 70%;
+      overflow-y: auto;
+      background: var(--panel-bg);
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid var(--muted-border);
+      box-sizing: border-box;
+    }
+    #outputBox {
+      flex: 1 1 1px;
+      min-width: 320px;
+      display: flex;
+      flex-direction: column;
+      background: var(--panel-bg);
+      border-radius: 8px;
+      border: 1px solid var(--muted-border);
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    body.dark .inputs, body.dark #outputBox { background: #2a2a2a; border-color: #444; }
+
+    /* Vertical divider */
+    .divider {
+      width: 8px;
+      cursor: col-resize;
+      background: linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent);
+      border-radius: 4px;
+      margin: 0 8px;
+      align-self: stretch;
+      transition: background 0.12s;
+    }
+    .divider:hover { background: linear-gradient(90deg, transparent, rgba(0,0,0,0.12), transparent); }
+    body.dark .divider { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent); }
+
+    /* Horizontal divider inside output */
+    .divider-horizontal {
+      height: 6px;
+      cursor: row-resize;
+      background: linear-gradient(180deg, transparent, rgba(0,0,0,0.08), transparent);
+      border-radius: 4px;
+      transition: background 0.12s;
+    }
+    .divider-horizontal:hover { background: linear-gradient(180deg, transparent, rgba(0,0,0,0.18), transparent); }
+    body.dark .divider-horizontal { background: linear-gradient(180deg, transparent, rgba(255,255,255,0.08), transparent); }
+
+    /* content boxes inside output */
+    #preview { flex: 1.6; overflow-y: auto; padding: 15px; border-bottom: none; box-sizing: border-box; }
+    #generatedWrapper { flex: 1; display:flex; flex-direction: column; overflow: hidden; }
+    pre.code-wrapper { flex: 1; margin: 0; }
+    pre code#generated {
+      display:block; padding:15px; border-radius:6px; width:100%; height:100%;
+      overflow:auto; font-family:monospace; white-space: pre-wrap; word-break: break-word;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.light pre code#generated { background:#f5f5f5; color:#222; }
+    body.dark  pre code#generated { background:#272822; color:#f8f8f2; }
+
+    /* header & controls */
+    h2 { margin: 0 0 8px 0; font-size: 18px; }
+    details { margin-bottom: 10px; border:1px solid var(--muted-border); padding:8px 10px; border-radius:6px; background:#fafafa; }
+    body.dark details { background: #333; border-color:#555; }
+    details summary { cursor:pointer; font-weight:bold; }
+    label { display:block; font-weight:700; margin-top:10px; }
+    input[type="text"], textarea { width:100%; padding:6px; margin-top:6px; border-radius:4px; border:1px solid #ccc; box-sizing:border-box; }
+    body.dark input, body.dark textarea { background:#444; color:#eee; border-color:#666; }
+    textarea { height:70px; resize: vertical; }
+
+    /* action bars */
+    .action-bar { display:flex; gap:10px; justify-content:flex-end; padding:6px 10px; background:inherit; }
+    button { border:none; cursor:pointer; font-weight:700; }
+    .btn-primary { padding:8px 12px; border-radius:6px; background:#0078d7; color:#fff; }
+    .btn-primary:hover { background:#005bb5; }
+    .btn-secondary { padding:8px 12px; border-radius:6px; background:#444; color:#fff; }
+    .btn-secondary:hover { background:#222; }
+
+    /* icon button */
+    button.icon-btn { width:36px; height:36px; border-radius:50%; font-size:16px; display:flex; align-items:center; justify-content:center; transition: transform .28s ease, background .2s; }
+    button.icon-btn:hover { background: rgba(0,0,0,0.06); }
+    body.dark button.icon-btn:hover { background: rgba(255,255,255,0.04); }
+
+    /* preview helper classes */
+    .desktop-view .visible-xs { display:none !important; }
+    .desktop-view .hidden-xs { display:block !important; }
+    .mobile-view .visible-xs { display:block !important; }
+    .mobile-view .hidden-xs { display:none !important; }
+
+    /* small toast style */
+    .toast {
+      position: fixed; right: 20px; bottom: 20px; background: rgba(0,0,0,0.85); color: #fff; padding: 8px 12px; border-radius: 6px;
+      font-weight:700; z-index:9999;
+    }
+  </style>
+</head>
+<body class="light">
+
+  <!-- Left inputs -->
+  <div class="inputs" id="inputsPanel">
+    <h2>Enter Content</h2>
+
+    <details open>
+      <summary>Content Sections</summary>
+      <label>Section 1:</label>
+      <input type="text" id="sec1" value='Enjoy a dozen flavor-packed reds for <b>just $12.99 a bottle.</b>'>
+
+      <label>Section 2:</label>
+      <textarea id="sec2">Start with three <b>gold-medal blockbusters</b> ...</textarea>
+
+      <label>Section 3:</label>
+      <input type="text" id="sec3" value='<b>Order now before we sell out</b>…'>
+
+      <label>Section 4 Image URL:</label>
+      <input type="text" id="img1" value="/images/us/law/itemlist/2025/august/trio.png">
+
+      <label>Section 4 Bold Text:</label>
+      <input type="text" id="bold1" value="Add this 94-point Reserva trio and save $78">
+
+      <label>Section 5:</label>
+      <textarea id="sec5">Aluado is one of our best-selling Portuguese reds...</textarea>
+
+      <label>Mobile Image URL:</label>
+      <input type="text" id="img2" value="/images/us/law/itemlist/2025/august/trio.png">
+
+      <label>Mobile Bold Text:</label>
+      <input type="text" id="bold2" value="Add this 94-point Reserva trio and save $78">
+
+      <label>Mobile Paragraph:</label>
+      <textarea id="sec6">Aluado is one of our best-selling Portuguese reds...</textarea>
+    </details>
+
+    <details>
+      <summary>Script Inputs</summary>
+      <h3>Block 2</h3>
+      <label>Bold Text:</label>
+      <input type="text" id="sBold2" value="Portuguese Reds SALE + Reserva Trio (15 btls)">
+      <label>Reg Strike Price:</label>
+      <input type="text" id="sReg2" value="$274.85">
+      <label>Sale Price:</label>
+      <input type="text" id="sSale2" value="$197.85">
+      <label>Save Text:</label>
+      <input type="text" id="sSave2" value="SAVE $78">
+
+      <h3>Block 1</h3>
+      <label>Bold Text:</label>
+      <input type="text" id="sBold1" value="Portuguese Reds SALE (12 btls)">
+      <label>Reg Strike Price:</label>
+      <input type="text" id="sReg1" value="$209.88">
+      <label>Sale Price:</label>
+      <input type="text" id="sSale1" value="$155.88">
+      <label>Save Text:</label>
+      <input type="text" id="sSave1" value="SAVE $54">
+    </details>
+  </div>
+
+  <!-- vertical divider -->
+  <div class="divider" id="divider" title="Drag to resize panels"></div>
+
+  <!-- Output area -->
+  <div id="outputBox">
+    <div style="padding:12px 16px 0 16px;">
+      <h2 style="margin-bottom:8px;">Preview (Content)</h2>
+      <div class="action-bar" style="justify-content:flex-start; gap:8px;">
+       
+        <div style="flex:1"></div>
+        <button id="viewToggle" class="icon-btn" onclick="toggleView()" title="Toggle Mobile/Desktop view">🖥️</button>
+        <button id="themeToggle" class="icon-btn" onclick="toggleTheme()" title="Toggle theme">☀️</button>
+      </div>
+    </div>
+
+    <div id="preview" class="desktop-view" style="padding:12px 16px 8px 16px;"></div>
+
+    <!-- horizontal divider -->
+    <div class="divider-horizontal" id="dividerH" title="Drag to resize preview / code"></div>
+
+    <div id="generatedWrapper">
+      <div style="padding:12px 16px;">
+        <h2 style="margin:0 0 8px 0;">Generated Code</h2>
+      </div>
+      <pre class="code-wrapper" style="padding:0 16px 10px 16px;"><code id="generated" class="language-html"></code></pre>
+      <div class="action-bar" style="padding:8px 16px 12px 16px;">
+        <div style="flex:1"></div>
+        <button class="btn-primary" onclick="copyCode()">Copy</button>
+        <button class="btn-secondary" onclick="downloadCode()">Download</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script>
+    // --- updateOutput: builds preview & generated code ---
+    function updateOutput() {
+      const baseURL = "https://www.laithwaites.com";
+
+      const sec1 = document.getElementById("sec1").value;
+      const sec2 = document.getElementById("sec2").value;
+      const sec3 = document.getElementById("sec3").value;
+      const img1 = document.getElementById("img1").value;
+      const bold1 = document.getElementById("bold1").value;
+      const sec5 = document.getElementById("sec5").value;
+      const img2 = document.getElementById("img2").value;
+      const bold2 = document.getElementById("bold2").value;
+      const sec6 = document.getElementById("sec6").value;
+
+      const sBold1 = document.getElementById("sBold1").value;
+      const sReg1 = document.getElementById("sReg1").value;
+      const sSale1 = document.getElementById("sSale1").value;
+      const sSave1 = document.getElementById("sSave1").value;
+
+      const sBold2 = document.getElementById("sBold2").value;
+      const sReg2 = document.getElementById("sReg2").value;
+      const sSale2 = document.getElementById("sSale2").value;
+      const sSave2 = document.getElementById("sSave2").value;
+
+      const scriptPreviewBlocks = `
+<div><span>${escapeHtml(sBold2)}
+  <span style="padding-left: 8px;" class="reg-strike-price">${escapeHtml(sReg2)}</span>
+  <span style="padding-left: 1px;" class="sale-price">${escapeHtml(sSale2)}</span>
+  <span style="padding-left: 1px; color:#CF004F;" class="sale-price">${escapeHtml(sSave2)}</span>
+</span></div>
+<div><span>${escapeHtml(sBold1)}
+  <span style="padding-left: 8px;" class="reg-strike-price">${escapeHtml(sReg1)}</span>
+  <span style="padding-left: 1px;" class="sale-price">${escapeHtml(sSale1)}</span>
+  <span style="padding-left: 1px; color:#CF004F;" class="sale-price">${escapeHtml(sSave1)}</span>
+</span></div>`;
+
+      // preview: uses baseURL for images (desktop preview)
+      const htmlPart = `
+${scriptPreviewBlocks}
+<p>${sec1}</p>
+<p>${sec2}</p>
+<p>${sec3}</p>
+<p class="hidden-xs"><img src="${baseURL}${img1}" width="140" align="left" style="margin:0 20px;"><br>
+<span style="color: #CF004F; padding-right: 170px;"><b>${bold1}</b></span></p>
+<p class="hidden-xs">${sec5}</p>
+<center><p class="visible-xs"><img src="${baseURL}${img2}" width="140" style="margin:10px 0;"></p></center>
+<p class="visible-xs"><b style="font-size: 20px;color: #CF004F;">${bold2}</b></p>
+<p class="visible-xs">${sec6}</p>`;
+
+      // generated HTML (raw src paths)
+      const generatedHtmlPart = `
+<p>${sec1}</p>
+<p>${sec2}</p>
+<p>${sec3}</p>
+<p class="hidden-xs"><img src="${img1}" width="140" align="left" style="margin:0 20px;"><br>
+<span style="color: #CF004F; padding-right: 170px;"><b>${bold1}</b></span></p>
+<p class="hidden-xs">${sec5}</p>
+<center><p class="visible-xs"><img src="${img2}" width="140" style="margin:10px 0;"></p></center>
+<p class="visible-xs"><b style="font-size: 20px;color: #CF004F;">${bold2}</b></p>
+<p class="visible-xs">${sec6}</p>`;
+
+      const scriptPart = `
+<script>
+$(document).ready(function () {
+  $('.add-to-cart').prepend('<div><span>${escapeJs(sBold1)}' +
+    '<span style="padding-left: 8px;" class="reg-strike-price">${escapeJs(sReg1)}</span>' +
+    '<span style="padding-left: 1px;" class="sale-price">${escapeJs(sSale1)}</span>' +
+    '<span style="padding-left: 1px;color:#CF004F;" class="sale-price">${escapeJs(sSave1)}</span>' +
+  '</span></div>');
+
+  $('.add-to-cart').prepend('<div><span>${escapeJs(sBold2)}' +
+    '<span style="padding-left: 8px;" class="reg-strike-price">${escapeJs(sReg2)}</span>' +
+    '<span style="padding-left: 1px;" class="sale-price">${escapeJs(sSale2)}</span>' +
+    '<span style="padding-left: 1px;color:#CF004F;" class="sale-price">${escapeJs(sSave2)}</span>' +
+  '</span></div>');
+});
+<\/script>`;
+
+      const fullCode = generatedHtmlPart + "\n\n" + scriptPart;
+
+      // render preview (unsafe HTML intentionally since preview is WYSIWYG)
+      document.getElementById("preview").innerHTML = htmlPart;
+      // render generated code as escaped text for Prism
+      const codeEl = document.getElementById("generated");
+      codeEl.textContent = fullCode.trim();
+      Prism.highlightElement(codeEl);
+    }
+
+    // small helper: escape for injecting inside preview blocks for scriptPreviewBlocks (we don't double-escape preview text)
+    function escapeHtml(str) {
+      if (!str && str !== 0) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+    // helper to escape quotes for JS string inside generated script block
+    function escapeJs(str) {
+      if (!str && str !== 0) return '';
+      return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
+    }
+
+    // toggle view (desktop/mobile)
+    function toggleView() {
+      const preview = document.getElementById("preview");
+      const btn = document.getElementById("viewToggle");
+      preview.classList.toggle("desktop-view");
+      preview.classList.toggle("mobile-view");
+      if (preview.classList.contains("mobile-view")) {
+        btn.textContent = "📱";
+        btn.style.transform = "rotateY(180deg)";
+      } else {
+        btn.textContent = "🖥️";
+        btn.style.transform = "rotateY(0deg)";
+      }
+    }
+
+    // theme toggle
+    function toggleTheme() {
+      const body = document.body;
+      const themeBtn = document.getElementById("themeToggle");
+      body.classList.toggle("dark");
+      body.classList.toggle("light");
+      if (body.classList.contains("dark")) {
+        themeBtn.textContent = "🌙";
+        themeBtn.style.transform = "rotate(-180deg)";
+      } else {
+        themeBtn.textContent = "☀️";
+        themeBtn.style.transform = "rotate(0deg)";
+      }
+      // re-highlight so colors adapt (Prism just reads CSS)
+      const codeEl = document.getElementById("generated");
+      Prism.highlightElement(codeEl);
+    }
+
+    // copy with toast
+    function copyCode() {
+      const code = document.getElementById("generated").textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        const t = document.createElement('div');
+        t.className = 'toast';
+        t.textContent = '✅ Copied to clipboard';
+        document.body.appendChild(t);
+        setTimeout(()=> t.remove(), 1200);
+      }).catch(()=> alert('Copy failed'));
+    }
+
+    function downloadCode() {
+      const code = document.getElementById("generated").textContent;
+      const blob = new Blob([code], { type: "text/html" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "snippet.html";
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    // wire input listeners + initial render
+    document.querySelectorAll("input, textarea").forEach(inp => inp.addEventListener("input", updateOutput));
+    // initial call
+    updateOutput();
+
+    // ---- Resizable vertical divider between inputs & output ----
+    (function verticalDivider() {
+      const divider = document.getElementById('divider');
+      const inputs = document.getElementById('inputsPanel');
+      let dragging=false;
+
+      function start(e){
+        dragging=true;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+      }
+      function move(e){
+        if(!dragging) return;
+        const clientX = (e.touches ? e.touches[0].clientX : e.clientX);
+        const min = 200, max = document.body.clientWidth - 320;
+        if (clientX < min || clientX > max) return;
+        inputs.style.flex = `0 0 ${clientX}px`;
+        inputs.style.maxWidth = `${clientX}px`;
+      }
+      function stop(){
+        if(!dragging) return;
+        dragging=false;
+        document.body.style.cursor='';
+        document.body.style.userSelect='';
+      }
+
+      divider.addEventListener('mousedown', start);
+      divider.addEventListener('touchstart', start, {passive:false});
+      window.addEventListener('mousemove', move);
+      window.addEventListener('touchmove', move, {passive:false});
+      window.addEventListener('mouseup', stop);
+      window.addEventListener('touchend', stop);
+
+      divider.addEventListener('dblclick', ()=> {
+        inputs.style.flex = ''; inputs.style.maxWidth = '';
+      });
+    })();
+
+    // ---- Resizable horizontal divider between preview & code ----
+    (function horizontalDivider(){
+      const divider = document.getElementById('dividerH');
+      const preview = document.getElementById('preview');
+      const genWrap = document.getElementById('generatedWrapper');
+      const outputBox = document.getElementById('outputBox');
+      let dragging=false;
+
+      function start(e){
+        dragging=true;
+        document.body.style.cursor='row-resize';
+        document.body.style.userSelect='none';
+        e.preventDefault();
+      }
+      function move(e){
+        if(!dragging) return;
+        const clientY = (e.touches ? e.touches[0].clientY : e.clientY);
+        const rect = outputBox.getBoundingClientRect();
+        const relative = clientY - rect.top;
+        const min = 80, max = rect.height - 120;
+        if (relative < min || relative > max) return;
+        preview.style.flex = `0 0 ${relative}px`;
+        genWrap.style.flex = '1';
+      }
+      function stop(){
+        if(!dragging) return;
+        dragging=false;
+        document.body.style.cursor='';
+        document.body.style.userSelect='';
+      }
+
+      divider.addEventListener('mousedown', start);
+      divider.addEventListener('touchstart', start, {passive:false});
+      window.addEventListener('mousemove', move);
+      window.addEventListener('touchmove', move, {passive:false});
+      window.addEventListener('mouseup', stop);
+      window.addEventListener('touchend', stop);
+
+      divider.addEventListener('dblclick', ()=> {
+        preview.style.flex = ''; genWrap.style.flex = '';
+      });
+    })();
+  </script>
+</body>
+</html>
