@@ -1,0 +1,1771 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>My HTML Tools</title>
+
+    <style>
+        /* =========================================================
+           RESET
+        ========================================================= */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #f5f7fb;
+            --surface: #ffffff;
+            --surface-hover: #f8fafc;
+            --border: #e5e7eb;
+            --text: #111827;
+            --muted: #6b7280;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --shadow: 0 8px 30px rgba(15, 23, 42, 0.07);
+            --shadow-hover: 0 14px 40px rgba(15, 23, 42, 0.12);
+        }
+
+        body.dark {
+            --bg: #0b1120;
+            --surface: #111827;
+            --surface-hover: #172033;
+            --border: #263244;
+            --text: #f9fafb;
+            --muted: #9ca3af;
+            --primary: #60a5fa;
+            --primary-hover: #93c5fd;
+            --shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+            --shadow-hover: 0 14px 40px rgba(0, 0, 0, 0.35);
+        }
+
+        body {
+            font-family:
+                Inter,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                Arial,
+                sans-serif;
+
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+
+            transition:
+                background 0.25s ease,
+                color 0.25s ease;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        /* =========================================================
+           HEADER
+        ========================================================= */
+
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+
+            background: color-mix(
+                in srgb,
+                var(--surface) 92%,
+                transparent
+            );
+
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-inner {
+            max-width: 1400px;
+            margin: auto;
+            padding: 18px 24px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+        }
+
+        .brand-icon {
+            width: 44px;
+            height: 44px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: var(--primary);
+            color: white;
+
+            border-radius: 13px;
+            font-size: 22px;
+
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.25);
+        }
+
+        .brand-text h1 {
+            font-size: 19px;
+            line-height: 1.2;
+        }
+
+        .brand-text p {
+            margin-top: 3px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .icon-button {
+            width: 42px;
+            height: 42px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border: 1px solid var(--border);
+            border-radius: 12px;
+
+            background: var(--surface);
+            color: var(--text);
+
+            font-size: 18px;
+
+            transition: 0.2s ease;
+        }
+
+        .icon-button:hover {
+            background: var(--surface-hover);
+            transform: translateY(-1px);
+        }
+
+        /* =========================================================
+           MAIN
+        ========================================================= */
+
+        .container {
+            width: min(1400px, calc(100% - 40px));
+            margin: auto;
+            padding: 42px 0 60px;
+        }
+
+        .hero {
+            margin-bottom: 30px;
+        }
+
+        .hero h2 {
+            font-size: clamp(28px, 4vw, 42px);
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+        }
+
+        .hero p {
+            color: var(--muted);
+            font-size: 15px;
+        }
+
+        /* =========================================================
+           SEARCH
+        ========================================================= */
+
+        .search-container {
+            margin-top: 25px;
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+
+            color: var(--muted);
+            font-size: 18px;
+        }
+
+        #searchInput {
+            width: 100%;
+
+            padding: 16px 50px 16px 50px;
+
+            background: var(--surface);
+            color: var(--text);
+
+            border: 1px solid var(--border);
+            border-radius: 15px;
+
+            outline: none;
+
+            box-shadow: var(--shadow);
+
+            transition: 0.2s ease;
+        }
+
+        #searchInput:focus {
+            border-color: var(--primary);
+
+            box-shadow:
+                0 0 0 4px rgba(37, 99, 235, 0.1),
+                var(--shadow);
+        }
+
+        .clear-search {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+
+            width: 32px;
+            height: 32px;
+
+            border: 0;
+            border-radius: 9px;
+
+            background: transparent;
+            color: var(--muted);
+
+            display: none;
+        }
+
+        .clear-search:hover {
+            background: var(--surface-hover);
+        }
+
+        /* =========================================================
+           CATEGORIES
+        ========================================================= */
+
+        .categories {
+            display: flex;
+            gap: 9px;
+
+            margin: 24px 0 38px;
+
+            overflow-x: auto;
+            padding-bottom: 5px;
+
+            scrollbar-width: thin;
+        }
+
+        .category-button {
+            flex-shrink: 0;
+
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--muted);
+
+            padding: 9px 15px;
+            border-radius: 999px;
+
+            font-size: 13px;
+            font-weight: 600;
+
+            transition: 0.2s ease;
+        }
+
+        .category-button:hover {
+            color: var(--text);
+            background: var(--surface-hover);
+        }
+
+        .category-button.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* =========================================================
+           SECTIONS
+        ========================================================= */
+
+        .section {
+            margin-bottom: 42px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            margin-bottom: 17px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 750;
+        }
+
+        .section-count {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        /* =========================================================
+           RECENT
+        ========================================================= */
+
+        .recent-list {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .recent-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+
+            padding: 9px 13px;
+
+            border: 1px solid var(--border);
+            border-radius: 11px;
+
+            background: var(--surface);
+
+            color: var(--text);
+
+            font-size: 13px;
+
+            cursor: pointer;
+
+            transition: 0.2s ease;
+        }
+
+        .recent-item:hover {
+            background: var(--surface-hover);
+            transform: translateY(-1px);
+        }
+
+        .recent-time {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        /* =========================================================
+           TOOL GRID
+        ========================================================= */
+
+        .tool-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(auto-fill, minmax(275px, 1fr));
+
+            gap: 18px;
+        }
+
+        /* =========================================================
+           TOOL CARD
+        ========================================================= */
+
+        .tool-card {
+            position: relative;
+
+            background: var(--surface);
+            border: 1px solid var(--border);
+
+            border-radius: 18px;
+
+            padding: 21px;
+
+            box-shadow: var(--shadow);
+
+            transition:
+                transform 0.2s ease,
+                box-shadow 0.2s ease,
+                border-color 0.2s ease;
+
+            animation: cardIn 0.25s ease both;
+        }
+
+        @keyframes cardIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tool-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+            border-color: color-mix(
+                in srgb,
+                var(--primary) 35%,
+                var(--border)
+            );
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .tool-icon {
+            width: 52px;
+            height: 52px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: var(--surface-hover);
+
+            border: 1px solid var(--border);
+            border-radius: 14px;
+
+            font-size: 25px;
+        }
+
+        .favorite-button {
+            width: 35px;
+            height: 35px;
+
+            border: 0;
+            border-radius: 10px;
+
+            background: transparent;
+            color: var(--muted);
+
+            font-size: 20px;
+
+            transition: 0.2s ease;
+        }
+
+        .favorite-button:hover {
+            background: var(--surface-hover);
+            color: #f59e0b;
+        }
+
+        .favorite-button.active {
+            color: #f59e0b;
+        }
+
+        .tool-name {
+            margin-top: 17px;
+
+            font-size: 17px;
+            font-weight: 750;
+        }
+
+        .tool-description {
+            margin-top: 7px;
+
+            color: var(--muted);
+
+            font-size: 13px;
+            line-height: 1.55;
+
+            min-height: 41px;
+        }
+
+        .card-meta {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+
+            margin-top: 16px;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+
+            padding: 5px 8px;
+
+            border-radius: 7px;
+
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+        }
+
+        .tag.utility {
+            background: rgba(16, 185, 129, 0.12);
+            color: #10b981;
+        }
+
+        .tag.new {
+            background: rgba(59, 130, 246, 0.12);
+            color: #3b82f6;
+        }
+
+        .tag.beta {
+            background: rgba(168, 85, 247, 0.12);
+            color: #a855f7;
+        }
+
+        .tag.testing {
+            background: rgba(245, 158, 11, 0.12);
+            color: #f59e0b;
+        }
+
+        .category-label {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .open-button {
+            width: 100%;
+
+            margin-top: 18px;
+            padding: 11px 14px;
+
+            border: 0;
+            border-radius: 11px;
+
+            background: var(--primary);
+            color: white;
+
+            font-size: 13px;
+            font-weight: 700;
+
+            transition: 0.2s ease;
+        }
+
+        .open-button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        /* =========================================================
+           EMPTY STATE
+        ========================================================= */
+
+        .empty-state {
+            display: none;
+
+            text-align: center;
+
+            padding: 70px 20px;
+
+            background: var(--surface);
+            border: 1px dashed var(--border);
+
+            border-radius: 18px;
+        }
+
+        .empty-state-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 6px;
+        }
+
+        .empty-state p {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        /* =========================================================
+           FOOTER
+        ========================================================= */
+
+        footer {
+            text-align: center;
+            color: var(--muted);
+            font-size: 12px;
+
+            padding: 10px 0 30px;
+        }
+
+        /* =========================================================
+           MOBILE
+        ========================================================= */
+
+        @media (max-width: 700px) {
+
+            .header-inner {
+                padding: 14px 17px;
+            }
+
+            .brand-icon {
+                width: 40px;
+                height: 40px;
+            }
+
+            .brand-text h1 {
+                font-size: 16px;
+            }
+
+            .brand-text p {
+                font-size: 11px;
+            }
+
+            .container {
+                width: min(100% - 28px, 1400px);
+                padding-top: 30px;
+            }
+
+            .hero h2 {
+                font-size: 30px;
+            }
+
+            .hero p {
+                font-size: 14px;
+            }
+
+            .tool-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .categories {
+                margin-bottom: 28px;
+            }
+        }
+
+        @media (max-width: 420px) {
+
+            .header-actions .icon-button {
+                width: 38px;
+                height: 38px;
+            }
+
+            .brand-text p {
+                display: none;
+            }
+
+            .search-container {
+                margin-top: 20px;
+            }
+
+            .tool-card {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- =============================================================
+     HEADER
+============================================================= -->
+
+<header class="header">
+
+    <div class="header-inner">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                🛠️
+            </div>
+
+            <div class="brand-text">
+
+                <h1>My HTML Tools</h1>
+
+                <p>Personal Tools Hub</p>
+
+            </div>
+
+        </div>
+
+        <div class="header-actions">
+
+            <button
+                class="icon-button"
+                id="themeButton"
+                title="Toggle dark/light mode"
+                aria-label="Toggle theme">
+                🌙
+            </button>
+
+        </div>
+
+    </div>
+
+</header>
+
+
+<!-- =============================================================
+     MAIN
+============================================================= -->
+
+<main class="container">
+
+    <!-- HERO -->
+
+    <section class="hero">
+
+        <h2>Welcome 👋</h2>
+
+        <p>
+            All your tools in one place.
+            Search, organize and launch your utilities quickly.
+        </p>
+
+
+        <!-- SEARCH -->
+
+        <div class="search-container">
+
+            <span class="search-icon">
+                🔍
+            </span>
+
+            <input
+                type="search"
+                id="searchInput"
+                placeholder="Search tools..."
+                autocomplete="off">
+
+            <button
+                class="clear-search"
+                id="clearSearch"
+                aria-label="Clear search">
+                ✕
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================================================
+         CATEGORIES
+    ========================================================== -->
+
+    <div
+        class="categories"
+        id="categories">
+
+        <!-- Generated by JavaScript -->
+
+    </div>
+
+
+    <!-- =========================================================
+         FAVORITES
+    ========================================================== -->
+
+    <section
+        class="section"
+        id="favoritesSection">
+
+        <div class="section-header">
+
+            <h3 class="section-title">
+                ⭐ Favorites
+            </h3>
+
+            <span
+                class="section-count"
+                id="favoriteCount">
+                0 tools
+            </span>
+
+        </div>
+
+        <div
+            class="tool-grid"
+            id="favoriteGrid">
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================================================
+         RECENTLY USED
+    ========================================================== -->
+
+    <section
+        class="section"
+        id="recentSection">
+
+        <div class="section-header">
+
+            <h3 class="section-title">
+                🕐 Recently Used
+            </h3>
+
+        </div>
+
+        <div
+            class="recent-list"
+            id="recentList">
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================================================
+         ALL TOOLS
+    ========================================================== -->
+
+    <section class="section">
+
+        <div class="section-header">
+
+            <h3 class="section-title">
+                📂 All Tools
+            </h3>
+
+            <span
+                class="section-count"
+                id="toolCount">
+                0 tools
+            </span>
+
+        </div>
+
+        <div
+            class="tool-grid"
+            id="toolGrid">
+
+        </div>
+
+    </section>
+
+
+    <!-- EMPTY STATE -->
+
+    <div
+        class="empty-state"
+        id="emptyState">
+
+        <div class="empty-state-icon">
+            🔎
+        </div>
+
+        <h3>
+            No tools found
+        </h3>
+
+        <p>
+            Try another search or category.
+        </p>
+
+    </div>
+
+</main>
+
+
+<footer>
+    My HTML Tools • GitHub Pages
+</footer>
+
+
+<script>
+
+/* =============================================================
+   TOOL DATABASE
+   =============================================================
+
+   ADD YOUR TOOLS HERE.
+
+   path = location of your tool
+
+   Example:
+
+   tools/
+      batch-stock/
+         index.html
+
+   path:
+      "tools/batch-stock/index.html"
+
+============================================================= */
+
+const tools = [
+
+    {
+        id: "batch-stock",
+        name: "Batch Stock Lookup",
+        icon: "📦",
+        category: "Data",
+        status: "UTILITY",
+        statusClass: "utility",
+        description:
+            "Check multiple product codes, stock quantities, vintage changes and unavailable products.",
+        path: "tools/batch-stock/index.html"
+    },
+
+    {
+        id: "laithwaites-scraper",
+        name: "Laithwaites Scraper",
+        icon: "🕷️",
+        category: "Scraping",
+        status: "BETA",
+        statusClass: "beta",
+        description:
+            "Fetch and process Laithwaites product information with filtering and export options.",
+        path: "tools/laithwaites-scraper/index.html"
+    },
+
+    {
+        id: "json-tools",
+        name: "JSON Tools",
+        icon: "📄",
+        category: "Data",
+        status: "UTILITY",
+        statusClass: "utility",
+        description:
+            "Work with JSON data, formatting, conversion and quick data processing.",
+        path: "tools/json-tools/index.html"
+    },
+
+    {
+        id: "csv-tools",
+        name: "CSV Tools",
+        icon: "📊",
+        category: "Data",
+        status: "UTILITY",
+        statusClass: "utility",
+        description:
+            "Process, clean, filter and manage CSV data directly in your browser.",
+        path: "tools/csv-tools/index.html"
+    },
+
+    {
+        id: "image-tools",
+        name: "Image Tools",
+        icon: "🖼️",
+        category: "Images",
+        status: "UTILITY",
+        statusClass: "utility",
+        description:
+            "Useful image processing utilities for resizing, cleaning and preparing images.",
+        path: "tools/image-tools/index.html"
+    },
+
+    {
+        id: "photoshop-tools",
+        name: "Photoshop Helper",
+        icon: "🎨",
+        category: "Images",
+        status: "NEW",
+        statusClass: "new",
+        description:
+            "Utilities and helpers for Photoshop image workflows and automation.",
+        path: "tools/photoshop-tools/index.html"
+    },
+
+    {
+        id: "d365-tools",
+        name: "D365 Tools",
+        icon: "⚙️",
+        category: "D365",
+        status: "UTILITY",
+        statusClass: "utility",
+        description:
+            "Helpful utilities for Microsoft D365 operational workflows.",
+        path: "tools/d365-tools/index.html"
+    },
+
+    {
+        id: "wine-tools",
+        name: "Wine Tools",
+        icon: "🍷",
+        category: "Wine",
+        status: "UTILITY",
+        statusClass: "utility",
+        description:
+            "Wine-related data processing and operational utilities.",
+        path: "tools/wine-tools/index.html"
+    },
+
+    {
+        id: "jira-tools",
+        name: "JIRA Tools",
+        icon: "📋",
+        category: "Utilities",
+        status: "NEW",
+        statusClass: "new",
+        description:
+            "Quick utilities for JIRA-related workflows and task management.",
+        path: "tools/jira-tools/index.html"
+    },
+
+    {
+        id: "excel-tools",
+        name: "Excel Tools",
+        icon: "📈",
+        category: "Data",
+        status: "UTILITY",
+        statusClass: "utility",
+        description:
+            "Browser-based utilities for working with Excel-style data.",
+        path: "tools/excel-tools/index.html"
+    }
+
+];
+
+
+/* =============================================================
+   LOCAL STORAGE
+============================================================= */
+
+let favorites =
+    JSON.parse(localStorage.getItem("htmlToolsFavorites")) || [];
+
+let recent =
+    JSON.parse(localStorage.getItem("htmlToolsRecent")) || [];
+
+let currentCategory = "All";
+
+
+/* =============================================================
+   ELEMENTS
+============================================================= */
+
+const toolGrid =
+    document.getElementById("toolGrid");
+
+const favoriteGrid =
+    document.getElementById("favoriteGrid");
+
+const recentList =
+    document.getElementById("recentList");
+
+const categories =
+    document.getElementById("categories");
+
+const searchInput =
+    document.getElementById("searchInput");
+
+const clearSearch =
+    document.getElementById("clearSearch");
+
+const emptyState =
+    document.getElementById("emptyState");
+
+const favoritesSection =
+    document.getElementById("favoritesSection");
+
+const recentSection =
+    document.getElementById("recentSection");
+
+const favoriteCount =
+    document.getElementById("favoriteCount");
+
+const toolCount =
+    document.getElementById("toolCount");
+
+const themeButton =
+    document.getElementById("themeButton");
+
+
+/* =============================================================
+   CATEGORIES
+============================================================= */
+
+function createCategories() {
+
+    const uniqueCategories = [
+        "All",
+        "Favorites",
+        ...new Set(tools.map(tool => tool.category))
+    ];
+
+    categories.innerHTML = "";
+
+    uniqueCategories.forEach(category => {
+
+        const button =
+            document.createElement("button");
+
+        button.className =
+            "category-button" +
+            (category === currentCategory
+                ? " active"
+                : "");
+
+        button.textContent =
+            category === "Favorites"
+                ? "⭐ Favorites"
+                : category === "All"
+                    ? "All"
+                    : category;
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                currentCategory =
+                    category;
+
+                createCategories();
+
+                render();
+
+            }
+        );
+
+        categories.appendChild(button);
+
+    });
+
+}
+
+
+/* =============================================================
+   CREATE TOOL CARD
+============================================================= */
+
+function createToolCard(tool) {
+
+    const card =
+        document.createElement("article");
+
+    card.className = "tool-card";
+
+    const isFavorite =
+        favorites.includes(tool.id);
+
+    card.innerHTML = `
+
+        <div class="card-top">
+
+            <div class="tool-icon">
+                ${tool.icon}
+            </div>
+
+            <button
+                class="favorite-button ${isFavorite ? "active" : ""}"
+                title="${isFavorite ? "Remove from favorites" : "Add to favorites"}"
+                aria-label="Favorite">
+
+                ${isFavorite ? "★" : "☆"}
+
+            </button>
+
+        </div>
+
+        <h4 class="tool-name">
+            ${tool.name}
+        </h4>
+
+        <p class="tool-description">
+            ${tool.description}
+        </p>
+
+        <div class="card-meta">
+
+            <span class="tag ${tool.statusClass}">
+                ${getStatusIcon(tool.status)}
+                ${tool.status}
+            </span>
+
+            <span class="category-label">
+                ${tool.category}
+            </span>
+
+        </div>
+
+        <button
+            class="open-button">
+            Open Tool →
+        </button>
+
+    `;
+
+
+    /* Favorite */
+
+    const favoriteButton =
+        card.querySelector(".favorite-button");
+
+    favoriteButton.addEventListener(
+        "click",
+        event => {
+
+            event.stopPropagation();
+
+            toggleFavorite(tool.id);
+
+        }
+    );
+
+
+    /* Open tool */
+
+    const openButton =
+        card.querySelector(".open-button");
+
+    openButton.addEventListener(
+        "click",
+        () => {
+
+            addToRecent(tool.id);
+
+            window.location.href =
+                tool.path;
+
+        }
+    );
+
+
+    /* Allow clicking card */
+
+    card.addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target.closest(
+                    ".favorite-button"
+                )
+            ) {
+                return;
+            }
+
+            addToRecent(tool.id);
+
+            window.location.href =
+                tool.path;
+
+        }
+    );
+
+
+    return card;
+
+}
+
+
+/* =============================================================
+   STATUS ICON
+============================================================= */
+
+function getStatusIcon(status) {
+
+    switch (status) {
+
+        case "NEW":
+            return "🆕";
+
+        case "BETA":
+            return "🔵";
+
+        case "TESTING":
+            return "🟡";
+
+        case "UTILITY":
+            return "🟢";
+
+        default:
+            return "⚪";
+
+    }
+
+}
+
+
+/* =============================================================
+   FAVORITES
+============================================================= */
+
+function toggleFavorite(id) {
+
+    if (favorites.includes(id)) {
+
+        favorites =
+            favorites.filter(
+                item => item !== id
+            );
+
+    } else {
+
+        favorites.push(id);
+
+    }
+
+    localStorage.setItem(
+        "htmlToolsFavorites",
+        JSON.stringify(favorites)
+    );
+
+    render();
+
+}
+
+
+/* =============================================================
+   RECENTLY USED
+============================================================= */
+
+function addToRecent(id) {
+
+    recent =
+        recent.filter(
+            item => item.id !== id
+        );
+
+    recent.unshift({
+
+        id: id,
+
+        time: Date.now()
+
+    });
+
+    /* Keep last 5 */
+
+    recent =
+        recent.slice(0, 5);
+
+    localStorage.setItem(
+        "htmlToolsRecent",
+        JSON.stringify(recent)
+    );
+
+}
+
+
+/* =============================================================
+   RECENT LIST
+============================================================= */
+
+function renderRecent() {
+
+    recentList.innerHTML = "";
+
+    if (recent.length === 0) {
+
+        recentSection.style.display =
+            "none";
+
+        return;
+
+    }
+
+    recentSection.style.display =
+        "block";
+
+
+    recent.forEach(item => {
+
+        const tool =
+            tools.find(
+                t => t.id === item.id
+            );
+
+        if (!tool) return;
+
+
+        const element =
+            document.createElement("div");
+
+        element.className =
+            "recent-item";
+
+        element.innerHTML = `
+
+            <span>
+                ${tool.icon}
+            </span>
+
+            <strong>
+                ${tool.name}
+            </strong>
+
+            <span class="recent-time">
+                ${timeAgo(item.time)}
+            </span>
+
+        `;
+
+        element.addEventListener(
+            "click",
+            () => {
+
+                addToRecent(tool.id);
+
+                window.location.href =
+                    tool.path;
+
+            }
+        );
+
+        recentList.appendChild(
+            element
+        );
+
+    });
+
+}
+
+
+/* =============================================================
+   TIME AGO
+============================================================= */
+
+function timeAgo(timestamp) {
+
+    const seconds =
+        Math.floor(
+            (Date.now() - timestamp) / 1000
+        );
+
+    if (seconds < 60)
+        return "just now";
+
+    const minutes =
+        Math.floor(seconds / 60);
+
+    if (minutes < 60)
+        return `${minutes}m ago`;
+
+    const hours =
+        Math.floor(minutes / 60);
+
+    if (hours < 24)
+        return `${hours}h ago`;
+
+    const days =
+        Math.floor(hours / 24);
+
+    return `${days}d ago`;
+
+}
+
+
+/* =============================================================
+   SEARCH + FILTER
+============================================================= */
+
+function getFilteredTools() {
+
+    const search =
+        searchInput.value
+            .trim()
+            .toLowerCase();
+
+
+    let filtered =
+        [...tools];
+
+
+    /* Category */
+
+    if (currentCategory === "Favorites") {
+
+        filtered =
+            filtered.filter(
+                tool =>
+                    favorites.includes(
+                        tool.id
+                    )
+            );
+
+    }
+
+    else if (currentCategory !== "All") {
+
+        filtered =
+            filtered.filter(
+                tool =>
+                    tool.category ===
+                    currentCategory
+            );
+
+    }
+
+
+    /* Search */
+
+    if (search) {
+
+        filtered =
+            filtered.filter(tool => {
+
+                return (
+
+                    tool.name
+                        .toLowerCase()
+                        .includes(search)
+
+                    ||
+
+                    tool.description
+                        .toLowerCase()
+                        .includes(search)
+
+                    ||
+
+                    tool.category
+                        .toLowerCase()
+                        .includes(search)
+
+                    ||
+
+                    tool.status
+                        .toLowerCase()
+                        .includes(search)
+
+                );
+
+            });
+
+    }
+
+
+    return filtered;
+
+}
+
+
+/* =============================================================
+   RENDER
+============================================================= */
+
+function render() {
+
+    const filtered =
+        getFilteredTools();
+
+
+    /* Main grid */
+
+    toolGrid.innerHTML = "";
+
+    filtered.forEach(tool => {
+
+        toolGrid.appendChild(
+            createToolCard(tool)
+        );
+
+    });
+
+
+    /* Count */
+
+    toolCount.textContent =
+        `${filtered.length} ${
+            filtered.length === 1
+                ? "tool"
+                : "tools"
+        }`;
+
+
+    /* Favorites */
+
+    const favoriteTools =
+        tools.filter(
+            tool =>
+                favorites.includes(
+                    tool.id
+                )
+        );
+
+
+    favoriteGrid.innerHTML = "";
+
+    favoriteTools.forEach(tool => {
+
+        favoriteGrid.appendChild(
+            createToolCard(tool)
+        );
+
+    });
+
+
+    favoriteCount.textContent =
+        `${favoriteTools.length} ${
+            favoriteTools.length === 1
+                ? "tool"
+                : "tools"
+        }`;
+
+
+    favoritesSection.style.display =
+        favoriteTools.length > 0
+            ? "block"
+            : "none";
+
+
+    /* Recent */
+
+    renderRecent();
+
+
+    /* Empty */
+
+    emptyState.style.display =
+        filtered.length === 0
+            ? "block"
+            : "none";
+
+}
+
+
+/* =============================================================
+   SEARCH EVENTS
+============================================================= */
+
+searchInput.addEventListener(
+    "input",
+    () => {
+
+        clearSearch.style.display =
+            searchInput.value
+                ? "block"
+                : "none";
+
+        render();
+
+    }
+);
+
+
+clearSearch.addEventListener(
+    "click",
+    () => {
+
+        searchInput.value = "";
+
+        clearSearch.style.display =
+            "none";
+
+        searchInput.focus();
+
+        render();
+
+    }
+);
+
+
+/* =============================================================
+   DARK / LIGHT MODE
+============================================================= */
+
+function setTheme(theme) {
+
+    if (theme === "dark") {
+
+        document.body.classList.add(
+            "dark"
+        );
+
+        themeButton.textContent =
+            "☀️";
+
+        themeButton.title =
+            "Switch to light mode";
+
+    } else {
+
+        document.body.classList.remove(
+            "dark"
+        );
+
+        themeButton.textContent =
+            "🌙";
+
+        themeButton.title =
+            "Switch to dark mode";
+
+    }
+
+    localStorage.setItem(
+        "htmlToolsTheme",
+        theme
+    );
+
+}
+
+
+/* Load saved theme */
+
+const savedTheme =
+    localStorage.getItem(
+        "htmlToolsTheme"
+    );
+
+
+if (savedTheme) {
+
+    setTheme(savedTheme);
+
+} else {
+
+    /* Follow system preference */
+
+    const prefersDark =
+        window.matchMedia &&
+        window.matchMedia(
+            "(prefers-color-scheme: dark)"
+        ).matches;
+
+    setTheme(
+        prefersDark
+            ? "dark"
+            : "light"
+    );
+
+}
+
+
+/* Toggle */
+
+themeButton.addEventListener(
+    "click",
+    () => {
+
+        const isDark =
+            document.body.classList.contains(
+                "dark"
+            );
+
+        setTheme(
+            isDark
+                ? "light"
+                : "dark"
+        );
+
+    }
+);
+
+
+/* =============================================================
+   INITIALIZE
+============================================================= */
+
+createCategories();
+
+render();
+
+</script>
+
+</body>
+</html>
+```
