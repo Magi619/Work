@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Frame &amp; Fix — Photo Toolkit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#131211; --panel:#1b1a18; --panel-2:#201f1c; --line:#322f2a;
+    --text:#ede8df; --muted:#918a7c; --amber:#e8a33d; --amber-dim:#a97a34; --red:#c1443c; --radius:3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .screen{position:fixed; inset:0; display:none; flex-direction:column; align-items:center;}
+  .screen.active{display:flex;}
+  .eyebrow{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.18em; color:var(--amber); text-transform:uppercase; margin-bottom:10px;}
+  .title{font-size:28px; font-weight:600; margin:0 0 6px; letter-spacing:-0.01em;}
+  .sub{color:var(--muted); font-size:14px; margin:0 0 34px; max-width:480px; text-align:center; line-height:1.5;}
+  button{font-family:inherit; cursor:pointer;}
+  .btn{background:var(--panel-2); border:1px solid var(--line); color:var(--text); padding:10px 18px; border-radius:var(--radius); font-size:13px; font-weight:500; display:inline-flex; align-items:center; gap:8px; transition:border-color .15s, background .15s;}
+  .btn:hover{border-color:var(--amber-dim); background:#242220;}
+  .btn.primary{background:var(--amber); border-color:var(--amber); color:#1a1509; font-weight:600;}
+  .btn.primary:hover{background:#f0b154;}
+  .btn:disabled{opacity:.4; cursor:not-allowed;}
+  .btn.ghost{background:transparent; border-color:transparent; color:var(--muted); padding:8px 10px;}
+  .btn.ghost:hover{color:var(--text); background:var(--panel-2);}
+  .btn.block{width:100%; justify-content:center;}
+  .btn.sm{padding:7px 10px; font-size:12px;}
+  #screen-size{justify-content:center; padding:40px 20px;}
+  .presets-wrap{width:100%; max-width:980px; display:flex; flex-direction:column; align-items:center;}
+  .preset-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:12px; width:100%;}
+  .preset-card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px; text-align:left; color:var(--text); display:flex; align-items:center; gap:14px; transition:border-color .15s, transform .15s, background .15s;}
+  .preset-card:hover{border-color:var(--amber); background:#201e1a; transform:translateY(-1px);}
+  .ratio-box{flex:0 0 44px; height:44px; display:flex; align-items:center; justify-content:center;}
+  .ratio-box i{display:block; border:1.5px solid var(--amber-dim); background:rgba(232,163,61,.07);}
+  .preset-card:hover .ratio-box i{border-color:var(--amber);}
+  .preset-name{font-size:13.5px; font-weight:600; margin:0 0 3px;}
+  .preset-meta{font-size:11.5px; color:var(--muted); font-family:'IBM Plex Mono',monospace;}
+  #screen-upload{justify-content:center; padding:40px 20px;}
+  .upload-selected{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); margin-bottom:26px; display:flex; align-items:center; gap:10px;}
+  .upload-selected b{color:var(--amber); font-weight:500;}
+  .dropzone{width:min(560px, 90vw); border:1.5px dashed var(--line); border-radius:6px; padding:60px 30px; text-align:center; background:var(--panel); transition:border-color .15s, background .15s; cursor:pointer;}
+  .dropzone.drag{border-color:var(--amber); background:#211f1a;}
+  .dropzone svg{margin-bottom:18px; opacity:.8;}
+  .dropzone p{margin:0 0 4px; font-size:14.5px; color:var(--text);}
+  .dropzone span{font-size:12px; color:var(--muted);}
+  #file-input, #layer-file-input{display:none;}
+  .back-link{position:fixed; top:24px; left:28px; color:var(--muted); font-size:13px; text-decoration:none; display:flex; align-items:center; gap:6px;}
+  .back-link:hover{color:var(--text);}
+  #screen-editor{flex-direction:column; align-items:stretch;}
+  .editor-top{height:56px; flex:0 0 56px; display:flex; align-items:center; justify-content:space-between; padding:0 18px; border-bottom:1px solid var(--line); background:var(--panel);}
+  .editor-top .left, .editor-top .right{display:flex; align-items:center; gap:10px;}
+  .frame-label{font-size:13px; font-weight:600;}
+  .frame-dims{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--amber); border:1px solid var(--line); padding:3px 8px; border-radius:3px;}
+  .editor-body{flex:1; display:flex; min-height:0;}
+  .rail{width:56px; flex:0 0 56px; background:var(--panel); border-right:1px solid var(--line); display:flex; flex-direction:column; align-items:center; padding:12px 0; gap:4px; overflow-y:auto;}
+  .tool-btn{width:40px; height:40px; border-radius:var(--radius); background:transparent; border:1px solid transparent; color:var(--muted); display:flex; align-items:center; justify-content:center; position:relative; flex:0 0 auto;}
+  .tool-btn svg{width:17px; height:17px;}
+  .tool-btn:hover{color:var(--text); background:var(--panel-2);}
+  .tool-btn.active{color:var(--amber); border-color:var(--amber-dim); background:rgba(232,163,61,.08);}
+  .tool-btn .tt{position:absolute; left:50px; top:50%; transform:translateY(-50%); background:#0e0d0c; border:1px solid var(--line); padding:5px 9px; font-size:11px; white-space:nowrap; border-radius:3px; opacity:0; pointer-events:none; transition:opacity .1s; z-index:30;}
+  .tool-btn:hover .tt{opacity:1;}
+  .rail-divider{width:28px; height:1px; background:var(--line); margin:6px 0;}
+  .stage{flex:1; min-width:0; background:linear-gradient(45deg,#1a1917 25%,transparent 25%),linear-gradient(-45deg,#1a1917 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#1a1917 75%),linear-gradient(-45deg,transparent 75%,#1a1917 75%); background-size:20px 20px; background-position:0 0,0 10px,10px -10px,-10px 0; background-color:#0f0e0d; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;}
+  .stage.drag-over::after{content:'Drop image to add as a layer'; position:absolute; inset:14px; border:2px dashed var(--amber); border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--amber); font-family:'IBM Plex Mono',monospace; font-size:12px; background:rgba(232,163,61,.06); pointer-events:none; z-index:30;}
+  .canvas-holder{position:relative;}
+  .canvas-holder canvas{display:block; max-width:66vw; max-height:74vh;}
+  #work-canvas{box-shadow:0 8px 40px rgba(0,0,0,.5);}
+  #overlay-canvas{position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;}
+  .bracket{position:absolute; width:22px; height:22px; border:2px solid var(--amber); opacity:.85; pointer-events:none;}
+  .bracket.tl{top:-9px; left:-9px; border-right:none; border-bottom:none;}
+  .bracket.tr{top:-9px; right:-9px; border-left:none; border-bottom:none;}
+  .bracket.bl{bottom:-9px; left:-9px; border-right:none; border-top:none;}
+  .bracket.br{bottom:-9px; right:-9px; border-left:none; border-top:none;}
+  .brush-cursor{position:fixed; pointer-events:none; border:1.5px solid var(--amber); border-radius:50%; z-index:50; display:none; box-shadow:0 0 0 1px rgba(0,0,0,.6);}
+  .source-marker{position:absolute; width:14px; height:14px; margin:-7px 0 0 -7px; border:2px solid var(--amber); border-radius:50%; pointer-events:none; box-shadow:0 0 0 2px rgba(0,0,0,.5); z-index:10;}
+  .source-marker::after{content:''; position:absolute; inset:-6px; border:1px dashed var(--amber); border-radius:50%; opacity:.5;}
+  .layer-select-box{position:absolute; border:1.5px dashed var(--amber); pointer-events:none; z-index:9;}
+  .grad-line{position:absolute; height:2px; background:var(--amber); transform-origin:0 50%; pointer-events:none; z-index:11;}
+  .grad-dot{position:absolute; width:8px; height:8px; margin:-4px; border-radius:50%; background:var(--amber); pointer-events:none; z-index:12;}
+  .side-panel{position:relative; z-index:100; width:280px; flex:0 0 280px; background:var(--panel); border-left:1px solid var(--line); padding:18px 16px; overflow-y:auto; display:flex; flex-direction:column;}
+  .panel-title{font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--text); margin:0 0 4px;}
+  .panel-hint{font-size:11.5px; color:var(--muted); line-height:1.5; margin:0 0 16px;}
+  .field{margin-bottom:16px;}
+  .field-row{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;}
+  .field label{font-size:12px; color:var(--text);}
+  .field .val{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--amber);}
+  input[type=range]{-webkit-appearance:none; width:100%; height:3px; border-radius:2px; background:var(--line); outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:13px; height:13px; border-radius:50%; background:var(--amber); cursor:pointer; border:2px solid #1a1509;}
+  input[type=range]:disabled{opacity:.35;}
+  input[type=color]{width:100%; height:32px; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel-2); padding:2px; cursor:pointer;}
+  .preset-row{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px;}
+  .chip{font-size:11px; padding:6px 10px; border-radius:20px; border:1px solid var(--line); background:var(--panel-2); color:var(--muted);}
+  .chip:hover{color:var(--text); border-color:var(--amber-dim);}
+  .chip.active{color:#1a1509; background:var(--amber); border-color:var(--amber); font-weight:600;}
+  .divider{height:1px; background:var(--line); margin:16px 0;}
+  .small-btn-row{display:flex; gap:8px;}
+  .small-btn-row .btn{flex:1; justify-content:center; padding:9px 10px; font-size:12px;}
+  .two-col{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;}
+  .layers-section{flex:0 0 auto;}
+  .layer-list{display:flex; flex-direction:column; gap:6px; margin-bottom:10px; max-height:220px; overflow-y:auto;}
+  .layer-row{display:flex; align-items:center; gap:8px; padding:7px 8px; border-radius:var(--radius); border:1px solid var(--line); background:var(--panel-2);}
+  .layer-row.selected{border-color:var(--amber); background:rgba(232,163,61,.08);}
+  .layer-thumb{width:28px; height:28px; border-radius:2px; object-fit:cover; border:1px solid var(--line); flex:0 0 28px; background:#0f0e0d;}
+  .layer-name{flex:1; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer;}
+  .layer-actions{display:flex; align-items:center; gap:2px; position:relative; z-index:5; pointer-events:auto;}
+  .layer-actions .icon-btn{pointer-events:auto; position:relative; z-index:6;}
+  .layer-row{position:relative;}
+  .icon-btn{width:20px; height:20px; display:flex; align-items:center; justify-content:center; color:var(--muted); background:transparent; border:none; border-radius:2px;}
+  .icon-btn:hover{color:var(--text); background:#2a2723;}
+  .icon-btn svg{width:12px; height:12px;}
+  .icon-btn.danger:hover{color:var(--red);}
+  .layer-row.dim .layer-name{color:var(--muted);}
+  .tool-options{border-top:1px solid var(--line); padding-top:16px; margin-top:6px;}
+</style>
+</head>
+<body>
+
+<div class="screen active" id="screen-size">
+  <div class="presets-wrap" style="margin-top:6vh;">
+    <div class="eyebrow">Step 1 / 3</div>
+    <h1 class="title display">Choose your canvas size</h1>
+    <p class="sub">Pick the platform you're designing for. Your image will be framed to this exact size.</p>
+    <div class="preset-grid" id="preset-grid"></div>
+  </div>
+</div>
+
+<div class="screen" id="screen-upload">
+  <a href="#" class="back-link" id="back-to-size">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg> Back
+  </a>
+  <div style="margin-top:14vh; display:flex; flex-direction:column; align-items:center;">
+    <div class="eyebrow">Step 2 / 3</div>
+    <h1 class="title display">Import your main image</h1>
+    <div class="upload-selected">Canvas locked to <b id="upload-preset-label">—</b></div>
+    <div class="dropzone" id="dropzone">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#e8a33d" stroke-width="1.5"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+      <p>Drag &amp; drop an image here</p>
+      <span>or click to browse — JPG, PNG, WebP</span>
+    </div>
+    <input type="file" id="file-input" accept="image/*">
+  </div>
+</div>
+
+<div class="screen" id="screen-editor">
+  <div class="editor-top">
+    <div class="left">
+      <button class="btn ghost" id="editor-back" title="Choose a different image">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <span class="frame-label display" id="frame-label">—</span>
+      <span class="frame-dims mono" id="frame-dims">—</span>
+    </div>
+    <div class="right">
+      <button class="btn ghost" id="undo-btn" title="Undo last edit">Undo</button>
+      <button class="btn ghost" id="reset-btn" title="Reset everything">Reset</button>
+      <button class="btn primary" id="export-btn">Export PNG</button>
+    </div>
+  </div>
+
+  <div class="editor-body">
+    <div class="rail" id="tool-rail">
+      <button class="tool-btn active" data-tool="move" title="Move"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg><span class="tt">Move / Select layer</span></button>
+      <button class="tool-btn" data-tool="crop" title="Crop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 2v14a2 2 0 002 2h14"/><path d="M18 22V8a2 2 0 00-2-2H2"/></svg><span class="tt">Crop / Zoom (image layers)</span></button>
+      <div class="rail-divider"></div>
+      <button class="tool-btn" data-tool="brush" title="Brush"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9.06 11.9l8.07-8.06a2.85 2.85 0 114.03 4.03l-8.06 8.06"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 00-3-3.02z"/></svg><span class="tt">Brush</span></button>
+      <button class="tool-btn" data-tool="eraser" title="Eraser"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 20H8l-6-6a2 2 0 010-2.8L13.2 2 22 10.8 13 20"/><path d="M6 12l6 6"/></svg><span class="tt">Eraser</span></button>
+      <button class="tool-btn" data-tool="magic" title="Magic wand/eraser"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 6.2l1.4-1.4M6.8 17.2l1.4-1.4M12.4 6.2L11 4.8M17.8 11.8l1.4 1.4"/><path d="M3 21l9-9"/></svg><span class="tt">Magic Wand / Eraser</span></button>
+      <button class="tool-btn" data-tool="gradient" title="Gradient"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="7" width="18" height="10" rx="1"/><line x1="7" y1="7" x2="7" y2="17" opacity=".3"/><line x1="11" y1="7" x2="11" y2="17" opacity=".55"/><line x1="15" y1="7" x2="15" y2="17" opacity=".8"/></svg><span class="tt">Gradient</span></button>
+      <button class="tool-btn" data-tool="blur" title="Blur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><circle cx="6" cy="7" r="1"/><circle cx="18" cy="7" r="1"/><circle cx="6" cy="17" r="1"/><circle cx="18" cy="17" r="1"/></svg><span class="tt">Blur brush</span></button>
+      <button class="tool-btn" data-tool="feather" title="Feather"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.24 12.24a6 6 0 00-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg><span class="tt">Feather edges</span></button>
+      <button class="tool-btn" data-tool="heal" title="Heal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/><circle cx="12" cy="12" r="3"/></svg><span class="tt">Healing brush</span></button>
+      <div class="rail-divider"></div>
+      <button class="tool-btn" data-tool="adjust" title="Adjust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg><span class="tt">Adjust (global)</span></button>
+      <button class="tool-btn" data-tool="frame" title="Frame"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="0"/><rect x="7.5" y="7.5" width="9" height="9" rx="2"/></svg><span class="tt">Frame / border</span></button>
+    </div>
+
+    <div class="stage" id="stage">
+      <div class="canvas-holder" id="canvas-holder">
+        <canvas id="work-canvas"></canvas>
+        <canvas id="overlay-canvas"></canvas>
+        <div class="bracket tl"></div><div class="bracket tr"></div>
+        <div class="bracket bl"></div><div class="bracket br"></div>
+        <div class="source-marker" id="source-marker" style="display:none;"></div>
+        <div class="layer-select-box" id="layer-select-box" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div class="side-panel">
+      <div class="layers-section">
+        <p class="panel-title">Layers</p>
+        <div class="two-col">
+          <button class="btn sm" id="add-layer-btn">+ Add image</button>
+          <button class="btn sm" id="add-blank-btn">+ Blank layer</button>
+        </div>
+        <input type="file" id="layer-file-input" accept="image/*">
+        <div class="layer-list" id="layer-list"></div>
+      </div>
+
+      <div class="tool-options" id="tool-options">
+
+        <div class="tool-panel" id="panel-move">
+          <p class="panel-title">Move</p>
+          <p class="panel-hint">Click a layer on the canvas to select it, then drag to reposition it. Content moved past the frame edge is trimmed.</p>
+        </div>
+
+        <div class="tool-panel" id="panel-crop" style="display:none;">
+          <p class="panel-title">Crop / Zoom</p>
+          <p class="panel-hint">Reframes the selected image layer from its original source. Drag on canvas to pan. This discards prior brush/heal edits on this layer — use Move for those instead.</p>
+          <div class="field"><div class="field-row"><label>Zoom</label><span class="val" id="zoom-val">1.00×</span></div>
+            <input type="range" id="zoom-slider" min="100" max="300" value="100"></div>
+          <div class="small-btn-row"><button class="btn" id="center-btn">Center image</button></div>
+        </div>
+
+        <div class="tool-panel" id="panel-brush" style="display:none;">
+          <p class="panel-title">Brush</p>
+          <div class="field"><label style="display:block; margin-bottom:6px; font-size:12px;">Color</label><input type="color" id="brush-color" value="#e8a33d"></div>
+          <div class="field"><div class="field-row"><label>Size</label><span class="val" id="brush-size-val">24px</span></div>
+            <input type="range" id="brush-size" min="2" max="150" value="24"></div>
+          <div class="field"><div class="field-row"><label>Hardness</label><span class="val" id="brush-hardness-val">80%</span></div>
+            <input type="range" id="brush-hardness" min="0" max="100" value="80"></div>
+          <div class="field"><div class="field-row"><label>Opacity</label><span class="val" id="brush-opacity-val">100%</span></div>
+            <input type="range" id="brush-opacity" min="1" max="100" value="100"></div>
+          <p class="panel-hint">Click &amp; drag on canvas to paint onto the selected layer.</p>
+        </div>
+
+        <div class="tool-panel" id="panel-eraser" style="display:none;">
+          <p class="panel-title">Eraser</p>
+          <div class="field"><div class="field-row"><label>Size</label><span class="val" id="eraser-size-val">28px</span></div>
+            <input type="range" id="eraser-size" min="2" max="150" value="28"></div>
+          <div class="field"><div class="field-row"><label>Hardness</label><span class="val" id="eraser-hardness-val">80%</span></div>
+            <input type="range" id="eraser-hardness" min="0" max="100" value="80"></div>
+          <p class="panel-hint">Click &amp; drag to erase to transparent on the selected layer.</p>
+        </div>
+
+        <div class="tool-panel" id="panel-magic" style="display:none;">
+          <p class="panel-title">Magic Wand / Eraser</p>
+          <div class="preset-row">
+            <button class="chip active" data-mode="select">Select</button>
+            <button class="chip" data-mode="erase">Erase</button>
+          </div>
+          <div class="field"><div class="field-row"><label>Tolerance</label><span class="val" id="magic-tol-val">32</span></div>
+            <input type="range" id="magic-tol" min="1" max="100" value="32"></div>
+          <p class="panel-hint" id="magic-hint">Click a spot on the selected layer to erase connected pixels of a similar color.</p>
+          <div id="magic-selection-actions" style="display:none;">
+            <div class="small-btn-row" style="margin-bottom:8px;">
+              <button class="btn sm" id="magic-fill-btn">Fill selection</button>
+              <button class="btn sm" id="magic-delete-btn">Delete selection</button>
+            </div>
+            <button class="btn sm block" id="magic-clear-btn">Clear selection</button>
+          </div>
+        </div>
+
+        <div class="tool-panel" id="panel-gradient" style="display:none;">
+          <p class="panel-title">Gradient</p>
+          <div class="preset-row">
+            <button class="chip active" data-gtype="linear">Linear</button>
+            <button class="chip" data-gtype="radial">Radial</button>
+          </div>
+          <div class="two-col">
+            <div><label style="display:block; margin-bottom:6px; font-size:12px;">Color 1</label><input type="color" id="grad-color1" value="#e8a33d"></div>
+            <div><label style="display:block; margin-bottom:6px; font-size:12px;">Color 2</label><input type="color" id="grad-color2" value="#c1443c"></div>
+          </div>
+          <p class="panel-hint">Drag across the canvas to set direction &amp; length, then release to fill the selected layer.</p>
+        </div>
+
+        <div class="tool-panel" id="panel-blur" style="display:none;">
+          <p class="panel-title">Blur brush</p>
+          <div class="field"><div class="field-row"><label>Brush size</label><span class="val" id="blur-size-val">50px</span></div>
+            <input type="range" id="blur-size" min="10" max="180" value="50"></div>
+          <div class="field"><div class="field-row"><label>Strength</label><span class="val" id="blur-strength-val">6px</span></div>
+            <input type="range" id="blur-strength" min="1" max="24" value="6"></div>
+          <p class="panel-hint">Paint over an area to soften it on the selected layer.</p>
+        </div>
+
+        <div class="tool-panel" id="panel-feather" style="display:none;">
+          <p class="panel-title">Feather edges</p>
+          <div class="field"><div class="field-row"><label>Radius</label><span class="val" id="feather-radius-val">12px</span></div>
+            <input type="range" id="feather-radius" min="1" max="60" value="12"></div>
+          <button class="btn block sm" id="apply-feather-btn">Apply feather</button>
+          <p class="panel-hint" style="margin-top:12px;">Softens the whole selected layer's edges in one pass — good after a cutout or Magic Erase.</p>
+        </div>
+
+        <div class="tool-panel" id="panel-heal" style="display:none;">
+          <p class="panel-title">Healing Brush</p>
+          <p class="panel-hint"><b style="color:var(--amber)">Alt/Option + Click</b> on canvas to set a source point, then <b style="color:var(--amber)">click &amp; drag</b> to paint sampled pixels over the selected layer.</p>
+          <div class="field"><div class="field-row"><label>Brush size</label><span class="val" id="brush-val">36px</span></div>
+            <input type="range" id="heal-brush-slider" min="8" max="120" value="36"></div>
+          <p class="panel-hint" id="heal-status">No source point set yet.</p>
+        </div>
+
+        <div class="tool-panel" id="panel-adjust" style="display:none;">
+          <p class="panel-title">Adjust</p>
+          <p class="panel-hint">Applies to the whole flattened image, baked in on export.</p>
+          <div class="preset-row" id="filter-chips">
+            <button class="chip active" data-filter="none">None</button>
+            <button class="chip" data-filter="vivid">Vivid</button>
+            <button class="chip" data-filter="bw">B&amp;W</button>
+            <button class="chip" data-filter="warm">Warm</button>
+            <button class="chip" data-filter="cool">Cool</button>
+          </div>
+          <div class="field"><div class="field-row"><label>Brightness</label><span class="val" id="brightness-val">0</span></div>
+            <input type="range" id="brightness-slider" min="-100" max="100" value="0"></div>
+          <div class="field"><div class="field-row"><label>Contrast</label><span class="val" id="contrast-val">0</span></div>
+            <input type="range" id="contrast-slider" min="-100" max="100" value="0"></div>
+          <div class="field"><div class="field-row"><label>Saturation</label><span class="val" id="saturation-val">0</span></div>
+            <input type="range" id="saturation-slider" min="-100" max="100" value="0"></div>
+        </div>
+
+        <div class="tool-panel" id="panel-frame" style="display:none;">
+          <p class="panel-title">Frame</p>
+          <p class="panel-hint">Outer edge stays square, inner edge (around your photo) is rounded — like a print mat.</p>
+          <button class="btn block sm" id="frame-toggle" style="margin-bottom:16px;">Enable frame</button>
+          <div class="field"><div class="field-row"><label>Thickness</label><span class="val" id="frame-thick-val">40px</span></div>
+            <input type="range" id="frame-thick" min="4" max="150" value="40"></div>
+          <div class="field"><div class="field-row"><label>Inner radius</label><span class="val" id="frame-radius-val">40px</span></div>
+            <input type="range" id="frame-radius" min="0" max="200" value="40"></div>
+          <div class="preset-row">
+            <button class="chip active" data-fill="solid">Solid</button>
+            <button class="chip" data-fill="gradient">Gradient</button>
+          </div>
+          <div id="frame-solid-color"><label style="display:block; margin-bottom:6px; font-size:12px;">Color</label><input type="color" id="frame-color" value="#e8a33d"></div>
+          <div id="frame-gradient-colors" style="display:none;" class="two-col">
+            <div><label style="display:block; margin-bottom:6px; font-size:12px;">Color 1</label><input type="color" id="frame-grad1" value="#e8a33d"></div>
+            <div><label style="display:block; margin-bottom:6px; font-size:12px;">Color 2</label><input type="color" id="frame-grad2" value="#c1443c"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="brush-cursor" id="brush-cursor"></div>
+
+<script>
+(function(){
+  const PRESETS = [
+    {name:"YouTube Video Thumbnail", w:1280, h:720},
+    {name:"YouTube Shorts Thumbnail", w:1080, h:1920},
+    {name:"Instagram Post", w:1080, h:1350},
+    {name:"Instagram Square", w:1080, h:1080},
+    {name:"Instagram Story / Reel", w:1080, h:1920},
+    {name:"Facebook Post", w:1200, h:1500},
+    {name:"Facebook Video Thumbnail", w:1280, h:720},
+    {name:"X (Twitter) Post", w:1600, h:900},
+    {name:"Discord Image", w:1920, h:1080},
+    {name:"Twitch Thumbnail", w:1280, h:720},
+    {name:"LinkedIn Post", w:1200, h:1200},
+    {name:"TikTok Video/Cover", w:1080, h:1920},
+  ];
+
+  function gcd(a,b){ return b===0 ? a : gcd(b, a%b); }
+  function ratioLabel(w,h){ const g = gcd(w,h); return (w/g)+':'+(h/g); }
+  function hexToRgb(hex){ const v=parseInt(hex.slice(1),16); return {r:(v>>16)&255, g:(v>>8)&255, b:v&255}; }
+
+  const grid = document.getElementById('preset-grid');
+  PRESETS.forEach((p, idx) => {
+    const card = document.createElement('button');
+    card.className = 'preset-card';
+    const boxSize = 40;
+    let bw, bh;
+    if (p.w >= p.h){ bw = boxSize; bh = boxSize * (p.h/p.w); } else { bh = boxSize; bw = boxSize * (p.w/p.h); }
+    card.innerHTML = `<div class="ratio-box"><i style="width:${bw}px;height:${bh}px;"></i></div>
+      <div><p class="preset-name">${p.name}</p><p class="preset-meta">${p.w} × ${p.h}px · ${ratioLabel(p.w,p.h)}</p></div>`;
+    card.addEventListener('click', () => selectPreset(idx));
+    grid.appendChild(card);
+  });
+
+  let state = {
+    preset:null, tool:'move',
+    brightness:0, contrast:0, saturation:0,
+    sourcePoint:null, paintAnchor:null, undoStack:[],
+    magicMode:'select', magicSelection:null,
+    gradType:'linear', gradStart:null,
+    frame:{enabled:false, thickness:40, radius:40, fillMode:'solid', color:'#e8a33d', color1:'#e8a33d', color2:'#c1443c'}
+  };
+  let layers = [];
+  let activeLayerId = null;
+  let nextLayerId = 1;
+
+  const screens = { size:document.getElementById('screen-size'), upload:document.getElementById('screen-upload'), editor:document.getElementById('screen-editor') };
+  function showScreen(name){ Object.values(screens).forEach(s=>s.classList.remove('active')); screens[name].classList.add('active'); }
+
+  function selectPreset(idx){
+    state.preset = PRESETS[idx];
+    document.getElementById('upload-preset-label').textContent = `${state.preset.name} (${state.preset.w}×${state.preset.h})`;
+    showScreen('upload');
+  }
+  document.getElementById('back-to-size').addEventListener('click', e=>{ e.preventDefault(); showScreen('size'); });
+  document.getElementById('editor-back').addEventListener('click', ()=> showScreen('upload'));
+
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('file-input');
+  dropzone.addEventListener('click', ()=> fileInput.click());
+  ['dragenter','dragover'].forEach(evt=> dropzone.addEventListener(evt, e=>{ e.preventDefault(); dropzone.classList.add('drag'); }));
+  ['dragleave','drop'].forEach(evt=> dropzone.addEventListener(evt, e=>{ e.preventDefault(); dropzone.classList.remove('drag'); }));
+  dropzone.addEventListener('drop', e=>{ const f=e.dataTransfer.files[0]; if(f) loadMainFile(f); });
+  fileInput.addEventListener('change', e=>{ const f=e.target.files[0]; if(f) loadMainFile(f); });
+
+  function readImage(file, cb){
+    const reader = new FileReader();
+    reader.onload = e => { const img = new Image(); img.onload = ()=>cb(img); img.src = e.target.result; };
+    reader.readAsDataURL(file);
+  }
+  function loadMainFile(file){ if(!file.type.startsWith('image/')) return; readImage(file, img => initEditor(img)); }
+
+  const canvas = document.getElementById('work-canvas');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('overlay-canvas');
+  const octx = overlay.getContext('2d');
+  const sampleCanvas = document.createElement('canvas');
+  const sampleCtx = sampleCanvas.getContext('2d');
+
+  function W(){ return state.preset.w; }
+  function H(){ return state.preset.h; }
+
+  function makeLayerCanvas(){ const c = document.createElement('canvas'); c.width=W(); c.height=H(); return c; }
+
+  function initEditor(bgImg){
+    const p = state.preset;
+    canvas.width = p.w; canvas.height = p.h;
+    overlay.width = p.w; overlay.height = p.h;
+    sampleCanvas.width = p.w; sampleCanvas.height = p.h;
+
+    layers = []; activeLayerId = null; nextLayerId = 1;
+    state.undoStack = []; state.sourcePoint = null; state.magicSelection = null;
+    state.frame = {enabled:false, thickness:40, radius:40, fillMode:'solid', color:'#e8a33d', color1:'#e8a33d', color2:'#c1443c'};
+
+    const bg = {
+      id:0, name:'Background', type:'image', isBackground:true,
+      canvas:makeLayerCanvas(), visible:true, opacity:100,
+      sourceImg:bgImg, transform:{zoom:1, offX:0, offY:0}
+    };
+    bg.ctx = bg.canvas.getContext('2d');
+    bg.baseScale = Math.max(p.w / bgImg.width, p.h / bgImg.height);
+    layers.push(bg);
+    activeLayerId = 0;
+    renderImageLayer(bg);
+
+    document.getElementById('frame-label').textContent = p.name;
+    document.getElementById('frame-dims').textContent = `${p.w} × ${p.h}`;
+
+    resetToolUIDefaults();
+    composeCanvas();
+    renderLayerList();
+    setTool('move');
+    showScreen('editor');
+  }
+
+  function resetToolUIDefaults(){
+    document.getElementById('zoom-slider').value = 100;
+    document.getElementById('zoom-val').textContent = '1.00×';
+    document.getElementById('brightness-slider').value = 0;
+    document.getElementById('contrast-slider').value = 0;
+    document.getElementById('saturation-slider').value = 0;
+    document.getElementById('brightness-val').textContent = '0';
+    document.getElementById('contrast-val').textContent = '0';
+    document.getElementById('saturation-val').textContent = '0';
+    document.querySelectorAll('#filter-chips .chip').forEach(c=>c.classList.toggle('active', c.dataset.filter==='none'));
+    document.getElementById('source-marker').style.display = 'none';
+    document.getElementById('heal-status').textContent = 'No source point set yet.';
+    document.getElementById('frame-toggle').textContent = 'Enable frame';
+    document.getElementById('magic-selection-actions').style.display = 'none';
+    state.brightness=0; state.contrast=0; state.saturation=0;
+    octx.clearRect(0,0,overlay.width,overlay.height);
+  }
+
+  // ---- rendering an image-type layer from its source + transform ----
+  function renderImageLayer(layer){
+    const w=W(), h=H();
+    const t = layer.transform;
+    const scale = layer.baseScale * t.zoom;
+    const drawW = layer.sourceImg.width * scale;
+    const drawH = layer.sourceImg.height * scale;
+    if (layer.isBackground){
+      const maxOffX = Math.max(0,(drawW-w)/2), maxOffY = Math.max(0,(drawH-h)/2);
+      t.offX = Math.max(-maxOffX, Math.min(maxOffX, t.offX));
+      t.offY = Math.max(-maxOffY, Math.min(maxOffY, t.offY));
+    }
+    const x = (w-drawW)/2 + t.offX, y = (h-drawH)/2 + t.offY;
+    layer.ctx.clearRect(0,0,w,h);
+    layer.ctx.drawImage(layer.sourceImg, x, y, drawW, drawH);
+  }
+
+  function composeCanvas(){
+    const w=W(), h=H();
+    ctx.clearRect(0,0,w,h);
+    layers.forEach(l=>{
+      if(!l.visible) return;
+      ctx.save(); ctx.globalAlpha = l.opacity/100;
+      ctx.drawImage(l.canvas,0,0);
+      ctx.restore();
+    });
+    drawFrame();
+    applyCSSFilter();
+    updateSelectionBox();
+  }
+
+  // Draw the frame on a separate transparent surface so the photo/layers
+  // underneath are never erased or covered by the inner part of the frame.
+  const frameCanvas = document.createElement('canvas');
+  const frameCtx = frameCanvas.getContext('2d');
+
+  function drawFrame(){
+    const f = state.frame;
+    const w=W(), h=H();
+
+    frameCanvas.width = w;
+    frameCanvas.height = h;
+    frameCtx.clearRect(0,0,w,h);
+
+    if(!f.enabled) return;
+
+    const t = Math.max(0, Math.min(f.thickness, Math.min(w,h)/2));
+    const innerW = Math.max(1, w - t*2);
+    const innerH = Math.max(1, h - t*2);
+    const innerR = Math.max(0, Math.min(f.radius, Math.min(innerW,innerH)/2));
+
+    frameCtx.save();
+    if (f.fillMode==='gradient'){
+      const g = frameCtx.createLinearGradient(0,0,w,h);
+      g.addColorStop(0, f.color1);
+      g.addColorStop(1, f.color2);
+      frameCtx.fillStyle = g;
+    } else {
+      frameCtx.fillStyle = f.color;
+    }
+
+    // Outer frame.
+    frameCtx.fillRect(0,0,w,h);
+
+    // Remove only the inside from the transparent frame surface.
+    frameCtx.globalCompositeOperation='destination-out';
+    roundRectPath(frameCtx, t, t, innerW, innerH, innerR);
+    frameCtx.fill();
+    frameCtx.restore();
+
+    // Put the transparent frame over the already-composited layers.
+    ctx.drawImage(frameCanvas,0,0);
+  }
+  function roundRectPath(c,x,y,w,h,r){
+    r = Math.max(0, Math.min(r, Math.min(w,h)/2));
+    c.beginPath();
+    c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+    c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+    c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y);
+    c.closePath();
+  }
+
+  function applyCSSFilter(){ canvas.style.filter = cssFilterString(); }
+  function cssFilterString(){
+    const b=1+state.brightness/100, c=1+state.contrast/100, s=1+state.saturation/100;
+    return `brightness(${b}) contrast(${c}) saturate(${s})`;
+  }
+
+  function getLayer(id){ return layers.find(l=>l.id===id); }
+  function activeLayer(){ return getLayer(activeLayerId); }
+
+  function pushUndo(layer){
+    state.undoStack.push({layerId:layer.id, data:layer.ctx.getImageData(0,0,W(),H())});
+    if (state.undoStack.length>20) state.undoStack.shift();
+  }
+  document.getElementById('undo-btn').addEventListener('click', ()=>{
+    if(!state.undoStack.length) return;
+    const snap = state.undoStack.pop();
+    const l = getLayer(snap.layerId);
+    if (l){ l.ctx.putImageData(snap.data,0,0); composeCanvas(); renderLayerList(); }
+  });
+  document.getElementById('reset-btn').addEventListener('click', ()=>{
+    const bg = layers[0]; if (bg && bg.sourceImg) initEditor(bg.sourceImg);
+  });
+
+  // ---------- Tool switching ----------
+  document.querySelectorAll('.tool-btn').forEach(btn=> btn.addEventListener('click', ()=> setTool(btn.dataset.tool)));
+  function setTool(tool){
+    state.tool = tool;
+    document.querySelectorAll('.tool-btn').forEach(b=> b.classList.toggle('active', b.dataset.tool===tool));
+    document.querySelectorAll('.tool-panel').forEach(p=> p.style.display='none');
+    const panel = document.getElementById('panel-'+tool);
+    if (panel) panel.style.display='block';
+    document.getElementById('brush-cursor').style.display='none';
+    if (tool==='crop'){ syncCropPanel(); }
+    canvas.style.cursor = tool==='move' ? 'default' : (tool==='crop' ? 'grab' : (['brush','eraser','blur','heal'].includes(tool) ? 'none' : (tool==='gradient' ? 'crosshair' : 'default')));
+    updateSelectionBox();
+  }
+  function syncCropPanel(){
+    const l = activeLayer();
+    const zs = document.getElementById('zoom-slider');
+    if (l && l.type==='image'){ zs.disabled=false; zs.value = Math.round(l.transform.zoom*100); document.getElementById('zoom-val').textContent = l.transform.zoom.toFixed(2)+'×'; }
+    else { zs.disabled=true; }
+  }
+
+  // ---------- Layers: add / list ----------
+  const addLayerBtn = document.getElementById('add-layer-btn');
+  const addBlankBtn = document.getElementById('add-blank-btn');
+  const layerFileInput = document.getElementById('layer-file-input');
+  addLayerBtn.addEventListener('click', ()=> layerFileInput.click());
+  layerFileInput.addEventListener('change', e=>{ const f=e.target.files[0]; if(f) addLayerFromFile(f); layerFileInput.value=''; });
+  addBlankBtn.addEventListener('click', ()=>{
+    if(!state.preset) return;
+    const layer = { id:nextLayerId++, name:'Blank '+(layers.length), type:'blank', isBackground:false, canvas:makeLayerCanvas(), visible:true, opacity:100 };
+    layer.ctx = layer.canvas.getContext('2d');
+    layers.push(layer); activeLayerId = layer.id;
+    composeCanvas(); renderLayerList(); setTool('move');
+  });
+
+  function addLayerFromFile(file){
+    if(!file.type.startsWith('image/')) return;
+    readImage(file, img=>{
+      const p = state.preset;
+      const layer = {
+        id:nextLayerId++, name:file.name.replace(/\.[a-zA-Z0-9]+$/,'') || ('Layer '+(layers.length)),
+        type:'image', isBackground:false, canvas:makeLayerCanvas(), visible:true, opacity:100,
+        sourceImg:img, transform:{zoom:1, offX:0, offY:0}
+      };
+      layer.ctx = layer.canvas.getContext('2d');
+      const maxW = p.w*0.5, maxH = p.h*0.5;
+      layer.baseScale = Math.min(maxW/img.width, maxH/img.height, 1);
+      layers.push(layer); activeLayerId = layer.id;
+      renderImageLayer(layer);
+      composeCanvas(); renderLayerList(); setTool('move');
+    });
+  }
+
+  function thumbFor(layer){
+    const t = document.createElement('canvas'); t.width=30; t.height=30;
+    const tc = t.getContext('2d');
+    const s = Math.min(30/W(), 30/H());
+    const dw=W()*s, dh=H()*s;
+    tc.drawImage(layer.canvas, (30-dw)/2, (30-dh)/2, dw, dh);
+    return t.toDataURL();
+  }
+
+  function renderLayerList(){
+    const list = document.getElementById('layer-list');
+    list.innerHTML='';
+
+    for (let i=layers.length-1; i>=0; i--){
+      const l = layers[i];
+      const row = document.createElement('div');
+      row.className = 'layer-row' + (activeLayerId===l.id ? ' selected':'') + (!l.visible ? ' dim':'');
+      row.dataset.layerId = l.id;
+
+      row.innerHTML = `
+        <img class="layer-thumb" src="${thumbFor(l)}">
+        <span class="layer-name">${l.name}${l.isBackground?' (bg)':''}</span>
+        <div class="layer-actions">
+          ${!l.isBackground ? `<button type="button" class="icon-btn" data-act="up" title="Move up" aria-label="Move up">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
+          </button>
+          <button type="button" class="icon-btn" data-act="down" title="Move down" aria-label="Move down">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </button>` : ''}
+          <button type="button" class="icon-btn" data-act="vis" title="Toggle visibility" aria-label="Toggle visibility">
+            ${l.visible
+              ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>'
+              : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 18a11 11 0 01-5 1C5 19 1 12 1 12a20 20 0 015-5.6M9.5 5.1A11 11 0 0112 5c7 0 11 7 11 7a20 20 0 01-3 3.9M14.1 14.1a3 3 0 11-4.2-4.2"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'}
+          </button>
+          ${!l.isBackground ? `<button type="button" class="icon-btn danger" data-act="del" title="Delete layer" aria-label="Delete layer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+          </button>` : ''}
+        </div>`;
+
+      list.appendChild(row);
+    }
+  }
+
+  // One delegated handler keeps layer controls working even after the list is rebuilt.
+  const layerListEl = document.getElementById('layer-list');
+  layerListEl.addEventListener('click', function(e){
+    const row = e.target.closest('.layer-row');
+    if(!row) return;
+
+    const layerId = Number(row.dataset.layerId);
+    const l = getLayer(layerId);
+    if(!l) return;
+
+    const actionBtn = e.target.closest('[data-act]');
+    if(actionBtn){
+      e.preventDefault();
+      e.stopPropagation();
+      const action = actionBtn.dataset.act;
+
+      if(action === 'up') reorderLayer(l.id, 1);
+      else if(action === 'down') reorderLayer(l.id, -1);
+      else if(action === 'vis'){
+        l.visible = !l.visible;
+        composeCanvas();
+        renderLayerList();
+        updateSelectionBox();
+      }
+      else if(action === 'del') deleteLayer(l.id);
+      return;
+    }
+
+    // Clicking the layer row/name selects the layer.
+    activeLayerId = l.id;
+    renderLayerList();
+    if(state.tool==='crop') syncCropPanel();
+    updateSelectionBox();
+  });
+
+  function reorderLayer(id,dir){
+    const i=layers.findIndex(l=>l.id===id); const j=i+dir;
+    if(j<1 || j>=layers.length) return; // keep background pinned at 0
+    [layers[i],layers[j]]=[layers[j],layers[i]];
+    composeCanvas(); renderLayerList();
+  }
+  function deleteLayer(id){
+    layers = layers.filter(l=>l.id!==id);
+    if(activeLayerId===id) activeLayerId=0;
+    composeCanvas(); renderLayerList(); updateSelectionBox();
+  }
+
+  function updateSelectionBox(){
+    const box = document.getElementById('layer-select-box');
+    const l = activeLayer();
+    if (!l || l.isBackground || state.tool!=='move'){ box.style.display='none'; return; }
+    // approximate bounding box from opaque pixels (cheap sample every few px)
+    const bounds = opaqueBounds(l.canvas);
+    if(!bounds){ box.style.display='none'; return; }
+    const rect = canvas.getBoundingClientRect();
+    const s = rect.width/canvas.width;
+    box.style.display='block';
+    box.style.left=(bounds.x*s)+'px'; box.style.top=(bounds.y*s)+'px';
+    box.style.width=(bounds.w*s)+'px'; box.style.height=(bounds.h*s)+'px';
+  }
+  function opaqueBounds(c){
+    const cx = c.getContext('2d');
+    const step = 4;
+    const data = cx.getImageData(0,0,c.width,c.height).data;
+    let minX=c.width,minY=c.height,maxX=0,maxY=0,found=false;
+    for(let y=0;y<c.height;y+=step){
+      for(let x=0;x<c.width;x+=step){
+        const a = data[(y*c.width+x)*4+3];
+        if(a>10){ found=true; if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; }
+      }
+    }
+    if(!found) return null;
+    return {x:minX,y:minY,w:Math.max(4,maxX-minX),h:Math.max(4,maxY-minY)};
+  }
+
+  // ---------- Crop (image layers only) ----------
+  document.getElementById('zoom-slider').addEventListener('input', function(){
+    const l = activeLayer(); if(!l || l.type!=='image') return;
+    l.transform.zoom = this.value/100;
+    document.getElementById('zoom-val').textContent = l.transform.zoom.toFixed(2)+'×';
+    renderImageLayer(l); composeCanvas(); renderLayerList();
+  });
+  document.getElementById('center-btn').addEventListener('click', ()=>{
+    const l = activeLayer(); if(!l || l.type!=='image') return;
+    l.transform.offX=0; l.transform.offY=0; renderImageLayer(l); composeCanvas(); renderLayerList();
+  });
+
+  // ---------- shared canvas coord helper ----------
+  function canvasCoords(e){
+    const rect = canvas.getBoundingClientRect();
+    return { x:(e.clientX-rect.left)*(canvas.width/rect.width), y:(e.clientY-rect.top)*(canvas.height/rect.height) };
+  }
+  function updateBrushCursor(e, size){
+    const cur = document.getElementById('brush-cursor');
+    const rect = canvas.getBoundingClientRect();
+    const s = (size * rect.width/canvas.width);
+    cur.style.display='block'; cur.style.width=s+'px'; cur.style.height=s+'px';
+    cur.style.left=(e.clientX-s/2)+'px'; cur.style.top=(e.clientY-s/2)+'px';
+  }
+
+  // ---------- Brush ----------
+  const brushColorEl=document.getElementById('brush-color'), brushSizeEl=document.getElementById('brush-size'),
+        brushHardnessEl=document.getElementById('brush-hardness'), brushOpacityEl=document.getElementById('brush-opacity');
+  brushSizeEl.addEventListener('input', ()=> document.getElementById('brush-size-val').textContent = brushSizeEl.value+'px');
+  brushHardnessEl.addEventListener('input', ()=> document.getElementById('brush-hardness-val').textContent = brushHardnessEl.value+'%');
+  brushOpacityEl.addEventListener('input', ()=> document.getElementById('brush-opacity-val').textContent = brushOpacityEl.value+'%');
+
+  function softGradient(targetCtx,x,y,r,hardnessPct,rgb,alpha){
+    const g = targetCtx.createRadialGradient(x,y,r*(hardnessPct/100),x,y,r);
+    g.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},${alpha})`);
+    g.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0)`);
+    return g;
+  }
+  function brushPaintAt(l,x,y){
+    const rgb = hexToRgb(brushColorEl.value);
+    const size = parseInt(brushSizeEl.value,10), r=size/2;
+    const hardness = parseInt(brushHardnessEl.value,10), op = parseInt(brushOpacityEl.value,10)/100;
+    l.ctx.save();
+    l.ctx.fillStyle = softGradient(l.ctx,x,y,r,hardness,rgb,op);
+    l.ctx.beginPath(); l.ctx.arc(x,y,r,0,Math.PI*2); l.ctx.fill();
+    l.ctx.restore();
+  }
+
+  // ---------- Eraser ----------
+  const eraserSizeEl=document.getElementById('eraser-size'), eraserHardnessEl=document.getElementById('eraser-hardness');
+  eraserSizeEl.addEventListener('input', ()=> document.getElementById('eraser-size-val').textContent = eraserSizeEl.value+'px');
+  eraserHardnessEl.addEventListener('input', ()=> document.getElementById('eraser-hardness-val').textContent = eraserHardnessEl.value+'%');
+  function eraserPaintAt(l,x,y){
+    const size = parseInt(eraserSizeEl.value,10), r=size/2, hardness = parseInt(eraserHardnessEl.value,10);
+    l.ctx.save();
+    l.ctx.globalCompositeOperation='destination-out';
+    l.ctx.fillStyle = softGradient(l.ctx,x,y,r,hardness,{r:0,g:0,b:0},1);
+    l.ctx.beginPath(); l.ctx.arc(x,y,r,0,Math.PI*2); l.ctx.fill();
+    l.ctx.restore();
+  }
+
+  // ---------- Blur brush ----------
+  const blurSizeEl=document.getElementById('blur-size'), blurStrengthEl=document.getElementById('blur-strength');
+  blurSizeEl.addEventListener('input', ()=> document.getElementById('blur-size-val').textContent = blurSizeEl.value+'px');
+  blurStrengthEl.addEventListener('input', ()=> document.getElementById('blur-strength-val').textContent = blurStrengthEl.value+'px');
+  function blurPaintAt(l,x,y){
+    const size = parseInt(blurSizeEl.value,10), r=size/2, strength=parseInt(blurStrengthEl.value,10);
+    const bx=x-r, by=y-r;
+    const temp = document.createElement('canvas'); temp.width=size; temp.height=size;
+    const tctx = temp.getContext('2d');
+    tctx.filter = `blur(${strength}px)`;
+    tctx.drawImage(sampleCanvas, bx, by, size, size, 0, 0, size, size);
+    l.ctx.save();
+    l.ctx.beginPath(); l.ctx.arc(x,y,r,0,Math.PI*2); l.ctx.clip();
+    l.ctx.drawImage(temp, bx, by, size, size);
+    l.ctx.restore();
+  }
+
+  // ---------- Heal ----------
+  const healBrushSlider = document.getElementById('heal-brush-slider');
+  let healBrushSize = 36;
+  healBrushSlider.addEventListener('input', ()=>{ healBrushSize=parseInt(healBrushSlider.value,10); document.getElementById('brush-val').textContent = healBrushSize+'px'; });
+  function healPaintAt(l,px,py){
+    const anchor = state.paintAnchor;
+    const dx = px-anchor.targetStart.x, dy = py-anchor.targetStart.y;
+    const sx = anchor.sourceStart.x+dx, sy = anchor.sourceStart.y+dy;
+    const size = healBrushSize;
+    l.ctx.save();
+    l.ctx.beginPath(); l.ctx.arc(px,py,size/2,0,Math.PI*2); l.ctx.clip();
+    l.ctx.drawImage(sampleCanvas, sx-size/2, sy-size/2, size, size, px-size/2, py-size/2, size, size);
+    l.ctx.restore();
+  }
+
+  // ---------- Feather (single-shot on active layer) ----------
+  const featherRadiusEl = document.getElementById('feather-radius');
+  featherRadiusEl.addEventListener('input', ()=> document.getElementById('feather-radius-val').textContent = featherRadiusEl.value+'px');
+  document.getElementById('apply-feather-btn').addEventListener('click', ()=>{
+    const l = activeLayer(); if(!l) return;
+    pushUndo(l);
+    const r = parseInt(featherRadiusEl.value,10);
+    const temp = document.createElement('canvas'); temp.width=W(); temp.height=H();
+    temp.getContext('2d').drawImage(l.canvas,0,0);
+    l.ctx.clearRect(0,0,W(),H());
+    l.ctx.filter = `blur(${r}px)`;
+    l.ctx.drawImage(temp,0,0);
+    l.ctx.filter = 'none';
+    composeCanvas(); renderLayerList();
+  });
+
+  // ---------- Magic wand / eraser ----------
+  document.querySelectorAll('#panel-magic .chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      document.querySelectorAll('#panel-magic .chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active'); state.magicMode = chip.dataset.mode;
+      document.getElementById('magic-hint').textContent = state.magicMode==='erase'
+        ? 'Click a spot on the selected layer to erase connected pixels of a similar color.'
+        : 'Click a spot to select connected pixels of a similar color, then fill or delete the selection.';
+      clearMagicSelection();
+    });
+  });
+  const magicTolEl = document.getElementById('magic-tol');
+  magicTolEl.addEventListener('input', ()=> document.getElementById('magic-tol-val').textContent = magicTolEl.value);
+
+  function floodFillMask(imgData, startX, startY, tolerancePct){
+    const {width:w, height:h, data} = imgData;
+    const sIdx = (startY*w+startX)*4;
+    const sr=data[sIdx], sg=data[sIdx+1], sb=data[sIdx+2], sa=data[sIdx+3];
+    const thresh = (tolerancePct/100)*1020;
+    const visited = new Uint8Array(w*h);
+    const mask = new Uint8Array(w*h);
+    const stack = [startX, startY];
+    while(stack.length){
+      const y = stack.pop(), x = stack.pop();
+      if (x<0||y<0||x>=w||y>=h) continue;
+      const p = y*w+x;
+      if (visited[p]) continue;
+      visited[p]=1;
+      const i=p*4;
+      const diff = Math.abs(data[i]-sr)+Math.abs(data[i+1]-sg)+Math.abs(data[i+2]-sb)+Math.abs(data[i+3]-sa);
+      if (diff>thresh) continue;
+      mask[p]=1;
+      stack.push(x+1,y, x-1,y, x,y+1, x,y-1);
+    }
+    return mask;
+  }
+  function showMagicOverlay(mask){
+    const w=W(), h=H();
+    octx.clearRect(0,0,w,h);
+    const imgData = octx.createImageData(w,h);
+    for(let p=0;p<mask.length;p++){
+      if(mask[p]){ const i=p*4; imgData.data[i]=232; imgData.data[i+1]=163; imgData.data[i+2]=61; imgData.data[i+3]=110; }
+    }
+    octx.putImageData(imgData,0,0);
+  }
+  function clearMagicSelection(){
+    state.magicSelection=null;
+    octx.clearRect(0,0,overlay.width,overlay.height);
+    document.getElementById('magic-selection-actions').style.display='none';
+  }
+  document.getElementById('magic-clear-btn').addEventListener('click', clearMagicSelection);
+  document.getElementById('magic-delete-btn').addEventListener('click', ()=>{
+    const l=activeLayer(); if(!l||!state.magicSelection) return;
+    pushUndo(l);
+    const imgData = l.ctx.getImageData(0,0,W(),H());
+    const mask = state.magicSelection;
+    for(let p=0;p<mask.length;p++){ if(mask[p]) imgData.data[p*4+3]=0; }
+    l.ctx.putImageData(imgData,0,0);
+    composeCanvas(); renderLayerList(); clearMagicSelection();
+  });
+  document.getElementById('magic-fill-btn').addEventListener('click', ()=>{
+    const l=activeLayer(); if(!l||!state.magicSelection) return;
+    pushUndo(l);
+    const rgb = hexToRgb(brushColorEl.value);
+    const imgData = l.ctx.getImageData(0,0,W(),H());
+    const mask = state.magicSelection;
+    for(let p=0;p<mask.length;p++){ if(mask[p]){ const i=p*4; imgData.data[i]=rgb.r; imgData.data[i+1]=rgb.g; imgData.data[i+2]=rgb.b; imgData.data[i+3]=255; } }
+    l.ctx.putImageData(imgData,0,0);
+    composeCanvas(); renderLayerList(); clearMagicSelection();
+  });
+  function magicClickAt(l,x,y){
+    x=Math.round(x); y=Math.round(y);
+    if(x<0||y<0||x>=W()||y>=H()) return;
+    const imgData = l.ctx.getImageData(0,0,W(),H());
+    const tol = parseInt(magicTolEl.value,10);
+    const mask = floodFillMask(imgData, x, y, tol);
+    if (state.magicMode==='erase'){
+      pushUndo(l);
+      for(let p=0;p<mask.length;p++){ if(mask[p]) imgData.data[p*4+3]=0; }
+      l.ctx.putImageData(imgData,0,0);
+      composeCanvas(); renderLayerList();
+    } else {
+      state.magicSelection = mask;
+      showMagicOverlay(mask);
+      document.getElementById('magic-selection-actions').style.display='block';
+    }
+  }
+
+  // ---------- Gradient ----------
+  document.querySelectorAll('#panel-gradient .chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      document.querySelectorAll('#panel-gradient .chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active'); state.gradType = chip.dataset.gtype;
+    });
+  });
+  function applyGradient(l, p1, p2){
+    pushUndo(l);
+    const c1 = document.getElementById('grad-color1').value, c2 = document.getElementById('grad-color2').value;
+    let g;
+    if (state.gradType==='radial'){
+      const dist = Math.hypot(p2.x-p1.x, p2.y-p1.y) || 1;
+      g = l.ctx.createRadialGradient(p1.x,p1.y,0,p1.x,p1.y,dist);
+    } else {
+      g = l.ctx.createLinearGradient(p1.x,p1.y,p2.x,p2.y);
+    }
+    g.addColorStop(0,c1); g.addColorStop(1,c2);
+    l.ctx.save(); l.ctx.fillStyle=g; l.ctx.fillRect(0,0,W(),H()); l.ctx.restore();
+    composeCanvas(); renderLayerList();
+  }
+
+  // ---------- Frame ----------
+  document.getElementById('frame-toggle').addEventListener('click', function(){
+    state.frame.enabled = !state.frame.enabled;
+    this.textContent = state.frame.enabled ? 'Disable frame' : 'Enable frame';
+    composeCanvas();
+  });
+  document.getElementById('frame-thick').addEventListener('input', function(){ state.frame.thickness=parseInt(this.value,10); document.getElementById('frame-thick-val').textContent=this.value+'px'; composeCanvas(); });
+  document.getElementById('frame-radius').addEventListener('input', function(){ state.frame.radius=parseInt(this.value,10); document.getElementById('frame-radius-val').textContent=this.value+'px'; composeCanvas(); });
+  document.querySelectorAll('#panel-frame .chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      document.querySelectorAll('#panel-frame .chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active'); state.frame.fillMode = chip.dataset.fill;
+      document.getElementById('frame-solid-color').style.display = state.frame.fillMode==='solid' ? 'block':'none';
+      document.getElementById('frame-gradient-colors').style.display = state.frame.fillMode==='gradient' ? 'grid':'none';
+      composeCanvas();
+    });
+  });
+  document.getElementById('frame-color').addEventListener('input', function(){ state.frame.color=this.value; composeCanvas(); });
+  document.getElementById('frame-grad1').addEventListener('input', function(){ state.frame.color1=this.value; composeCanvas(); });
+  document.getElementById('frame-grad2').addEventListener('input', function(){ state.frame.color2=this.value; composeCanvas(); });
+
+  // ---------- Adjust ----------
+  const FILTERS = { none:{b:0,c:0,s:0}, vivid:{b:5,c:18,s:35}, bw:{b:0,c:8,s:-100}, warm:{b:6,c:5,s:12}, cool:{b:0,c:5,s:-8} };
+  document.getElementById('filter-chips').addEventListener('click', e=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    document.querySelectorAll('#filter-chips .chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    const f = FILTERS[chip.dataset.filter];
+    state.brightness=f.b; state.contrast=f.c; state.saturation=f.s;
+    document.getElementById('brightness-slider').value=f.b; document.getElementById('contrast-slider').value=f.c; document.getElementById('saturation-slider').value=f.s;
+    document.getElementById('brightness-val').textContent=f.b; document.getElementById('contrast-val').textContent=f.c; document.getElementById('saturation-val').textContent=f.s;
+    applyCSSFilter();
+  });
+  function wireAdjustSlider(id,valId,key){
+    document.getElementById(id).addEventListener('input', function(){ state[key]=parseInt(this.value,10); document.getElementById(valId).textContent=this.value; applyCSSFilter(); });
+  }
+  wireAdjustSlider('brightness-slider','brightness-val','brightness');
+  wireAdjustSlider('contrast-slider','contrast-val','contrast');
+  wireAdjustSlider('saturation-slider','saturation-val','saturation');
+
+  // ---------- Pointer interactions ----------
+  let isPanning=false, panStart=null;
+  let isMovingLayer=false, moveSnap=null, moveStart=null;
+  let isStroking=false;
+  let isGradDragging=false;
+
+  canvas.addEventListener('mousedown', e=>{
+    const {x,y} = canvasCoords(e);
+    if (state.tool==='move'){
+      const hit = hitTestLayer(x,y);
+      if (hit){
+        activeLayerId = hit.id; renderLayerList(); updateSelectionBox();
+        isMovingLayer = true; moveStart = {x,y}; moveSnap = hit.ctx.getImageData(0,0,W(),H());
+        pushUndo(hit);
+      }
+    } else if (state.tool==='crop'){
+      const l = activeLayer();
+      if (l && l.type==='image'){ isPanning=true; panStart={x:e.clientX,y:e.clientY,offX:l.transform.offX,offY:l.transform.offY}; canvas.style.cursor='grabbing'; }
+    } else if (['brush','eraser','blur'].includes(state.tool)){
+      const l = activeLayer(); if(!l) return;
+      pushUndo(l);
+      if (state.tool==='blur'){ sampleCtx.clearRect(0,0,W(),H()); sampleCtx.drawImage(l.canvas,0,0); }
+      isStroking = true;
+      paintStroke(l, x, y);
+    } else if (state.tool==='heal'){
+      startHeal(e);
+    } else if (state.tool==='magic'){
+      const l = activeLayer(); if(l) magicClickAt(l,x,y);
+    } else if (state.tool==='gradient'){
+      const l = activeLayer(); if(!l) return;
+      isGradDragging = true; state.gradStart = {x,y};
+    }
+  });
+
+  function hitTestLayer(x,y){
+    for(let i=layers.length-1;i>=0;i--){
+      const l=layers[i]; if(!l.visible) continue;
+      if(x<0||y<0||x>=W()||y>=H()) continue;
+      const a = l.ctx.getImageData(Math.floor(x),Math.floor(y),1,1).data[3];
+      if (a>10) return l;
+    }
+    return layers[0];
+  }
+  function paintStroke(l,x,y){
+    if (state.tool==='brush') brushPaintAt(l,x,y);
+    else if (state.tool==='eraser') eraserPaintAt(l,x,y);
+    else if (state.tool==='blur') blurPaintAt(l,x,y);
+    composeCanvas();
+  }
+
+  window.addEventListener('mousemove', e=>{
+    const {x,y} = canvasCoords(e);
+    if (isPanning){
+      const l = activeLayer();
+      const rect = canvas.getBoundingClientRect(); const sf = canvas.width/rect.width;
+      l.transform.offX = panStart.offX + (e.clientX-panStart.x)*sf;
+      l.transform.offY = panStart.offY + (e.clientY-panStart.y)*sf;
+      renderImageLayer(l); composeCanvas();
+    }
+    if (isMovingLayer){
+      const l = activeLayer();
+      const dx = Math.round(x-moveStart.x), dy = Math.round(y-moveStart.y);
+      l.ctx.clearRect(0,0,W(),H());
+      l.ctx.putImageData(moveSnap, dx, dy);
+      composeCanvas(); updateSelectionBox();
+    }
+    if (isStroking){
+      const l = activeLayer(); if (l) paintStroke(l,x,y);
+    }
+    if (isGradDragging){ drawGradPreview(state.gradStart, {x,y}); }
+    if (['brush','eraser','blur','heal'].includes(state.tool)){
+      const sizeEl = state.tool==='brush' ? brushSizeEl : state.tool==='eraser' ? eraserSizeEl : state.tool==='blur' ? blurSizeEl : healBrushSlider;
+      updateBrushCursor(e, parseInt(sizeEl.value,10));
+    }
+    if (isHealing){ const l=activeLayer(); if(l) healPaintAt(l,x,y); composeCanvas(); }
+  });
+
+  window.addEventListener('mouseup', e=>{
+    isPanning=false; isMovingLayer=false; isStroking=false; isHealing=false; state.paintAnchor=null;
+    if (isGradDragging){
+      isGradDragging=false;
+      const {x,y} = canvasCoords(e);
+      const l = activeLayer();
+      if (l && state.gradStart){ applyGradient(l, state.gradStart, {x,y}); }
+      clearGradPreview(); state.gradStart=null;
+    }
+    if (state.tool==='crop') canvas.style.cursor='grab';
+    renderLayerList();
+  });
+
+  function drawGradPreview(p1,p2){
+    const rect = canvas.getBoundingClientRect(); const s = rect.width/canvas.width;
+    let line = document.getElementById('grad-preview-line');
+    let dotA = document.getElementById('grad-preview-a');
+    let dotB = document.getElementById('grad-preview-b');
+    const holder = document.getElementById('canvas-holder');
+    if(!line){ line=document.createElement('div'); line.id='grad-preview-line'; line.className='grad-line'; holder.appendChild(line); }
+    if(!dotA){ dotA=document.createElement('div'); dotA.id='grad-preview-a'; dotA.className='grad-dot'; holder.appendChild(dotA); }
+    if(!dotB){ dotB=document.createElement('div'); dotB.id='grad-preview-b'; dotB.className='grad-dot'; holder.appendChild(dotB); }
+    const x1=p1.x*s, y1=p1.y*s, x2=p2.x*s, y2=p2.y*s;
+    const len = Math.hypot(x2-x1,y2-y1), ang = Math.atan2(y2-y1,x2-x1);
+    line.style.left=x1+'px'; line.style.top=y1+'px'; line.style.width=len+'px'; line.style.transform=`rotate(${ang}rad)`;
+    dotA.style.left=x1+'px'; dotA.style.top=y1+'px'; dotB.style.left=x2+'px'; dotB.style.top=y2+'px';
+  }
+  function clearGradPreview(){
+    ['grad-preview-line','grad-preview-a','grad-preview-b'].forEach(id=>{ const el=document.getElementById(id); if(el) el.remove(); });
+  }
+
+  // ---------- Heal (drag handlers reuse window mousemove/up above) ----------
+  let isHealing=false;
+  const sourceMarker = document.getElementById('source-marker');
+  function startHeal(e){
+    const {x,y} = canvasCoords(e);
+    const l = activeLayer(); if(!l) return;
+    if (e.altKey){
+      state.sourcePoint = {x,y};
+      const rect = canvas.getBoundingClientRect(); const s = rect.width/canvas.width;
+      sourceMarker.style.display='block'; sourceMarker.style.left=(x*s)+'px'; sourceMarker.style.top=(y*s)+'px';
+      document.getElementById('heal-status').textContent = 'Source point set. Click & drag to paint.';
+      return;
+    }
+    if (!state.sourcePoint){ document.getElementById('heal-status').textContent='Alt/Option + Click first to set a source point.'; return; }
+    isHealing = true;
+    pushUndo(l);
+    sampleCtx.clearRect(0,0,W(),H()); sampleCtx.drawImage(l.canvas,0,0);
+    state.paintAnchor = { targetStart:{x,y}, sourceStart:{x:state.sourcePoint.x,y:state.sourcePoint.y} };
+    healPaintAt(l,x,y); composeCanvas();
+  }
+
+  // ---------- Stage-level drag & drop to add layers ----------
+  const stage = document.getElementById('stage');
+  ['dragenter','dragover'].forEach(evt=> stage.addEventListener(evt, e=>{ if(!screens.editor.classList.contains('active')) return; e.preventDefault(); stage.classList.add('drag-over'); }));
+  ['dragleave','drop'].forEach(evt=> stage.addEventListener(evt, e=>{ if(!screens.editor.classList.contains('active')) return; e.preventDefault(); stage.classList.remove('drag-over'); }));
+  stage.addEventListener('drop', e=>{ if(!screens.editor.classList.contains('active')) return; const f=e.dataTransfer.files[0]; if(f) addLayerFromFile(f); });
+  window.addEventListener('resize', updateSelectionBox);
+
+  // ---------- Export ----------
+  document.getElementById('export-btn').addEventListener('click', ()=>{
+    const p = state.preset;
+    const out = document.createElement('canvas'); out.width=p.w; out.height=p.h;
+    const oc = out.getContext('2d');
+    oc.filter = cssFilterString();
+    oc.drawImage(canvas,0,0);
+    out.toBlob(blob=>{
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href=url; a.download=`${p.name.replace(/[^\w]+/g,'-').toLowerCase()}-${p.w}x${p.h}.png`; a.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  });
+
+})();
+</script>
+</body>
+</html>
