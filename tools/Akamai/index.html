@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Akamai Image Link Generator</title>
+<style>
+* {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #0f172a;
+  color: #fff;
+  padding: 20px;
+}
+
+.container {
+  max-width: 1400px;
+  margin: auto;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #38bdf8;
+}
+
+.toolbar {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.market-selector {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+label {
+  cursor: pointer;
+}
+
+button {
+  background: #38bdf8;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #000;
+}
+
+button:hover {
+  background: #0ea5e9;
+}
+
+.sheet {
+  overflow-x: auto;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: #111827;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 1200px;
+}
+
+th, td {
+  border: 1px solid #334155;
+  padding: 8px;
+  min-width: 180px;
+  position: relative;
+}
+
+th {
+  background: #1e293b;
+  color: #38bdf8;
+  text-align: center;
+}
+
+td {
+  background: #0f172a;
+  color: #fff;
+}
+
+td[contenteditable="true"] {
+  outline: none;
+}
+
+td[contenteditable="true"]:focus {
+  background: #1e293b;
+}
+
+.link-cell {
+  word-break: break-all;
+  font-size: 12px;
+  color: #93c5fd;
+}
+
+a {
+  color: #93c5fd;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.row-number {
+  width: 50px;
+  text-align: center;
+  background: #1e293b;
+  color: #94a3b8;
+  font-weight: bold;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Akamai Image Cache Clear Link Generator</h1>
+
+  <div class="toolbar">
+    <div class="market-selector">
+      <strong>Market:</strong>
+      <label><input type="radio" name="market" value="UK" checked> UK</label>
+      <label><input type="radio" name="market" value="US"> US</label>
+      <label><input type="radio" name="market" value="APAC"> APAC</label>
+    </div>
+
+    <button onclick="generateLinks()">Generate Links</button>
+    <button onclick="copyAllLinks()">Copy All</button>
+    <button onclick="clearSheet()">Clear</button>
+    <button onclick="openAkamai()">Open Akamai</button>
+    <button onclick="document.getElementById('folderPicker').click()">Browse Folder</button>
+    <input type="file" id="folderPicker" webkitdirectory multiple hidden>
+  </div>
+
+  <div class="sheet">
+    <table id="excelTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>SKU Input</th>
+          <th>Generated Links</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const tableBody = document.getElementById('tableBody');
+
+function addRow(value = '') {
+  const rowCount = tableBody.children.length + 1;
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td class="row-number">${rowCount}</td>
+    <td contenteditable="true" class="input-cell">${value}</td>
+    <td class="link-cell"></td>
+  `;
+  tableBody.appendChild(row);
+}
+
+function createRows(count = 25) {
+  for (let i = 0; i < count; i++) {
+    addRow();
+  }
+}
+
+createRows();
+
+document.getElementById('folderPicker').addEventListener('change', function(e) {
+  const files = Array.from(e.target.files);
+
+  clearSheet();
+
+  while (tableBody.children.length < files.length) {
+    addRow();
+  }
+
+  files.forEach((file, index) => {
+    const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+    tableBody.children[index].children[1].innerText = nameWithoutExt;
+  });
+});
+
+document.addEventListener('paste', function(e) {
+  const active = document.activeElement;
+
+  if (!active || !active.classList.contains('input-cell')) return;
+
+  e.preventDefault();
+
+  const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+  const values = pastedText
+    .split(/\r?\n/)
+    .map(v => v.trim())
+    .filter(v => v);
+
+  const currentRow = active.parentElement;
+  const rows = Array.from(document.querySelectorAll('#tableBody tr'));
+  const startIndex = rows.indexOf(currentRow);
+
+  while (tableBody.children.length < startIndex + values.length) {
+    addRow();
+  }
+
+  values.forEach((value, i) => {
+    tableBody.children[startIndex + i].children[1].innerText = value;
+  });
+});
+
+function getSelectedMarket() {
+  return document.querySelector('input[name="market"]:checked').value;
+}
+
+function getLinks(sku, market) {
+  if (market === 'UK') {
+    return [
+      `https://www.laithwaites.co.uk/images/uk/en/law/product/${sku}.png`,
+      `https://www.averys.com/images/uk/en/law/product/${sku}.png`,
+      `https://www.sundaytimeswineclub.co.uk/images/uk/en/law/product/${sku}.png`,
+      `https://www.bbcgoodfoodwineclub.com/images/uk/en/law/product/${sku}.png`
+    ];
+  }
+
+  if (market === 'US') {
+    return [
+      `https://www.foxnewswineshop.com/images/us/en/product/${sku}.png`,
+      `https://www.laithwaites.com/images/us/en/product/${sku}.png`
+    ];
+  }
+
+  if (market === 'APAC') {
+    return [
+      `https://www.laithwaites.com.au/images/au/en/product/${sku}.png`,
+      `https://www.laithwaites.com.au/images/au/en/product/${sku}b.png`,
+      `https://www.theaustralianwine.com.au/images/au/en/product/${sku}.png`,
+      `https://www.theaustralianwine.com.au/images/au/en/product/${sku}b.png`,
+      `https://www.virginwines.com.au/images/au/en/product/${sku}.png`,
+      `https://www.virginwines.com.au/images/au/en/product/${sku}b.png`,
+      `https://redemption.virginwines.com.au/images/au/en/product/${sku}.png`,
+      `https://redemption.virginwines.com.au/images/au/en/product/${sku}b.png`,
+      `https://www.laithwaites.co.nz/images/nz/en/product/${sku}.png`,
+      `https://www.laithwaites.co.nz/images/nz/en/product/${sku}b.png`
+    ];
+  }
+
+  return [];
+}
+
+function generateLinks() {
+  const rows = document.querySelectorAll('#tableBody tr');
+  const market = getSelectedMarket();
+
+  rows.forEach(row => {
+    const sku = row.children[1].innerText.trim();
+    const outputCell = row.children[2];
+
+    if (!sku) {
+      outputCell.innerHTML = '';
+      return;
+    }
+
+    const links = getLinks(sku, market);
+
+    outputCell.innerHTML = links
+      .map(link => `<div><a href="${link}" target="_blank">${link}</a></div>`)
+      .join('');
+  });
+}
+
+function copyAllLinks() {
+  const rows = document.querySelectorAll('#tableBody tr');
+  const market = getSelectedMarket();
+  let allLinks = [];
+
+  rows.forEach(row => {
+    const sku = row.children[1].innerText.trim();
+    if (!sku) return;
+    allLinks.push(...getLinks(sku, market));
+  });
+
+  navigator.clipboard.writeText(allLinks.join('\n'));
+  alert('All links copied!');
+}
+
+function clearSheet() {
+  const rows = document.querySelectorAll('#tableBody tr');
+
+  rows.forEach(row => {
+    row.children[1].innerText = '';
+    row.children[2].innerHTML = '';
+  });
+}
+
+function openAkamai() {
+  window.open(
+    'https://control.akamai.com/apps/home-page/#/home',
+    '_blank'
+  );
+}
+</script>
+</body>
+</html>
