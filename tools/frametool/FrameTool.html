@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Frame Tool</title>
+
+<style>
+body {
+    background:#111;
+    color:#fff;
+    font-family:Arial;
+    padding:20px;
+
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    gap:40px;
+}
+
+canvas {
+    margin-top:20px;
+}
+
+.controls {
+    margin-top:20px;
+    text-align:left;
+}
+
+.color-btn {
+    width:30px;
+    height:30px;
+    border:none;
+    margin:3px;
+    cursor:pointer;
+    border-radius:6px;
+}
+
+button.download {
+    padding:10px 20px;
+    margin-top:10px;
+    background:#00c3ff;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+}
+</style>
+
+</head>
+<body>
+
+<div>
+    <h2>🎨 Frame Generator</h2>
+    <canvas id="canvas" width="1280" height="720"></canvas>
+</div>
+
+<div class="controls">
+
+    <!-- 🖼️ Upload -->
+    <input type="file" accept="image/*" onchange="loadImage(event)">
+
+    <br><br>
+
+    <!-- Color Picker -->
+    <input type="color" id="colorPicker" value="#00ffff">
+
+    <br><br>
+
+    <!-- Basic Colors -->
+    <div>
+        <button class="color-btn" style="background:#00ffff" onclick="setColor('#00ffff')"></button>
+        <button class="color-btn" style="background:#ff0000" onclick="setColor('#ff0000')"></button>
+        <button class="color-btn" style="background:#00ff00" onclick="setColor('#00ff00')"></button>
+        <button class="color-btn" style="background:#0000ff" onclick="setColor('#0000ff')"></button>
+        <button class="color-btn" style="background:#ffff00" onclick="setColor('#ffff00')"></button>
+        <button class="color-btn" style="background:#ff00ff" onclick="setColor('#ff00ff')"></button>
+        <button class="color-btn" style="background:#ffffff" onclick="setColor('#ffffff')"></button>
+    </div>
+
+    <br><br>
+
+    <h4>Gradient Mode</h4>
+
+    <input type="color" value="#00ffff" onchange="setGradientColor1(this.value)">
+    <input type="color" value="#ff00ff" onchange="setGradientColor2(this.value)">
+
+    <br><br>
+
+    <button onclick="enableGradient()">Enable Gradient</button>
+    <button onclick="setDirection('horizontal')">↔ Horizontal</button>
+    <button onclick="setDirection('vertical')">↕ Vertical</button>
+
+    <br><br>
+
+    <button class="download" onclick="downloadImage()">Download PNG</button>
+
+    <h3> Created By MagiPTTG </h3>
+</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const picker = document.getElementById("colorPicker");
+
+// 🖼️ Image
+let userImage = null;
+
+// Gradient
+let gradientMode = false;
+let color1 = "#00ffff";
+let color2 = "#ff00ff";
+let direction = "horizontal";
+
+const outerRadius = 0;
+const innerRadius = 30;
+const border = 12;
+
+// 🖼️ Load Image
+function loadImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const img = new Image();
+    img.onload = function () {
+        userImage = img;
+        drawFrame();
+    };
+    img.src = URL.createObjectURL(file);
+}
+
+function drawFrame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    let fill;
+
+    if (gradientMode) {
+        if (direction === "horizontal") {
+            fill = ctx.createLinearGradient(0, 0, canvas.width, 0);
+        } else {
+            fill = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        }
+
+        fill.addColorStop(0, color1);
+        fill.addColorStop(1, color2);
+
+    } else {
+        fill = picker.value;
+    }
+
+    // 🟦 Draw full frame
+    ctx.fillStyle = fill;
+    roundRect(ctx, 0, 0, canvas.width, canvas.height, outerRadius);
+    ctx.fill();
+
+    // 🕳️ Cut center
+    ctx.globalCompositeOperation = "destination-out";
+    roundRect(
+        ctx,
+        border,
+        border,
+        canvas.width - border*2,
+        canvas.height - border*2,
+        innerRadius
+    );
+    ctx.fill();
+
+    ctx.globalCompositeOperation = "source-over";
+
+    // 🖼️ Draw image ONLY inside inner area
+    if (userImage) {
+        ctx.save();
+
+        // Clip to inner rounded rect
+        roundRect(
+            ctx,
+            border,
+            border,
+            canvas.width - border*2,
+            canvas.height - border*2,
+            innerRadius
+        );
+        ctx.clip();
+
+        ctx.drawImage(userImage, 0, 0, canvas.width, canvas.height);
+
+        ctx.restore();
+    }
+}
+
+// helper
+function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y);
+    ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r);
+    ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h);
+    ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r);
+    ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+}
+
+// Color picker
+picker.addEventListener("input", () => {
+    gradientMode = false;
+    drawFrame();
+});
+
+function setColor(color) {
+    picker.value = color;
+    gradientMode = false;
+    drawFrame();
+}
+
+// Gradient
+function enableGradient() {
+    gradientMode = true;
+    drawFrame();
+}
+
+function setGradientColor1(val) {
+    color1 = val;
+    gradientMode = true;
+    drawFrame();
+}
+
+function setGradientColor2(val) {
+    color2 = val;
+    gradientMode = true;
+    drawFrame();
+}
+
+function setDirection(dir) {
+    direction = dir;
+    drawFrame();
+}
+
+// init
+drawFrame();
+
+// download
+function downloadImage() {
+    const link = document.createElement("a");
+    link.download = "frame.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+}
+</script>
+
+</body>
+</html>
