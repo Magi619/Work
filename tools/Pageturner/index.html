@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Order Code Extractor </title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script>
+    // IMPORTANT: set worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+  </script>
+
+  <!-- XLSX -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <!-- font -->
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#050805; --panel:#07120d; --text:#c9ffdf; --accent:#00ff9c; --accent-dim:#0ddb7b;
+      --ok:#00ff9c; --warn:#ffd166; --err:#ff4d6d; --line:#163b2c;
+      --shadow:0 0 20px rgba(0,255,156,.14), inset 0 0 12px rgba(0,255,156,.03);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%; margin:0; font-family:"Share Tech Mono", monospace; color:var(--text);
+      background: radial-gradient(1200px 800px at 20% -10%, #092013 0%, var(--bg) 40%) fixed;}
+    .wrap{max-width:1120px; margin:28px auto; padding:0 16px}
+    .title{display:flex; gap:12px; align-items:center; margin-bottom:16px}
+    .logo{width:40px;height:40px;border:2px solid var(--accent);border-radius:8px;display:grid;place-items:center;color:var(--accent);box-shadow:var(--shadow)}
+    h1{margin:0;color:var(--accent);font-size:20px;text-shadow:0 0 10px rgba(0,255,156,.25)}
+    .card{background:linear-gradient(180deg, rgba(0,255,156,.03), rgba(0,255,156,.01));border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:var(--shadow)}
+    .row{display:flex; align-items:center; gap:12px}
+    .spacer{flex:1}
+    .btn{appearance:none;border:none;cursor:pointer;padding:10px 14px;border-radius:10px;color:#052015;background:var(--accent);font-weight:700; box-shadow: 0 6px 18px rgba(0,255,156,.12); transition:all .1s}
+    .btn:hover{filter:saturate(120%)}
+    .btn[disabled]{opacity:.45;cursor:not-allowed}
+    .btn-ghost{background:transparent;color:var(--accent);border:1px dashed var(--accent-dim)}
+    /* Styled file input + drag drop - hide native input */
+    .file-input {
+      display:inline-flex; align-items:center; gap:12px;
+      background:var(--panel); border:1px solid rgba(0,255,156,.06); border-radius:10px; padding:10px 14px; cursor:pointer;
+      box-shadow: var(--shadow);
+    }
+    .file-tag{background:#03140d;color:var(--accent);padding:5px 10px;border-radius:6px;border:1px solid var(--accent-dim);font-weight:700}
+    .file-label{color:var(--accent); font-weight:700}
+    /* <-- hide native ugly input - still functional when clicking label */
+    .file-input input[type=file]{ display:none; }
+    .file-name{color:var(--text); opacity:0.9; font-size:13px}
+    .check{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:var(--panel);border:1px solid var(--line)}
+    /* output box */
+    #output{margin-top:14px;padding:12px;height:52vh;overflow:auto;white-space:pre-wrap;background:#04110a;border-radius:10px;border:1px solid var(--line);box-shadow:var(--shadow);font-family:Consolas, monospace;line-height:1.36}
+    .line{display:flex; gap:10px; align-items:center; margin:4px 0}
+    .meta{color:#7ddfb8a6; font-size:13px}
+    .ok{color:var(--ok)}
+    .warn{color:var(--warn)}
+    .err{color:var(--err)}
+    .code{font-weight:700; color:#d7fff0; margin-left:4px}
+    .name{color:#cfeee0; cursor:text}
+    .name[contenteditable="true"]{outline:1px dashed rgba(255,255,255,.04); padding:1px 4px; border-radius:4px; background: rgba(255,255,255,0.01)}
+    .delete{color:var(--err); cursor:pointer; font-weight:800; padding:2px 6px; border-radius:6px}
+    .hr{height:1px;background:linear-gradient(90deg, transparent, var(--accent) 40%, transparent); opacity:.28; margin:10px 0}
+    /* progress */
+    #progressWrap{margin-top:12px}
+    #progressBar{width:100%; height:10px; background:#071a13; border-radius:6px; overflow:hidden; border:1px solid rgba(0,0,0,.3)}
+    #progressInner{height:100%; width:0%; background: linear-gradient(90deg, rgba(0,255,156,.95), rgba(0,255,156,.6)); transition:width .18s linear}
+    #progressText{margin-top:6px; text-align:right; color:var(--accent); font-size:12px}
+    .controls{display:flex; gap:10px; align-items:center; margin-bottom:10px}
+    .foot{margin-top:8px;font-size:12px;color:#7ddfb8a6}
+    .drop-hover{box-shadow:0 0 40px rgba(0,255,156,.22); transform:translateY(-2px)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="title">
+      <div class="logo">◇</div>
+      <h1>ORDER CODE EXTRACTOR</h1>
+      <div class="spacer"></div>
+    </div>
+
+    <div class="card" id="card">
+      <div class="row" style="margin-bottom:12px; align-items:center">
+        <!-- single styled file input (native file input hidden) -->
+        <label class="file-input" id="fileInputLabel" title="Click to select or drag & drop files here">
+          <span class="file-tag">PDF</span>
+          <span class="file-label">📁 Select PDF(s)</span>
+          <input type="file" id="pdfFile" accept="application/pdf" multiple />
+          <span id="fileNameDisplay" class="file-name">No file chosen</span>
+        </label>
+
+        <button class="btn" id="runBtn">▶ RUN — Extract & Verify</button>
+
+        <div class="spacer"></div>
+
+        <label class="check">
+          <input type="checkbox" id="includeLinks" checked /> <span style="color:var(--text)">Include Links in Excel</span>
+        </label>
+      </div>
+
+      <div class="controls" style="margin-bottom:8px">
+        <button id="btnLaithwaites" class="btn" onclick="downloadExcel('laithwaites')" disabled>⬇ Laithwaites</button>
+        <button id="btnSundayTimes" class="btn" onclick="downloadExcel('sunday')" disabled>⬇ Sunday Times</button>
+        <button id="btnAverys" class="btn" onclick="downloadExcel('averys')" disabled>⬇ Averys</button>
+        <button class="btn btn-ghost" id="clearBtn">⟲ Clear</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <div id="output" aria-live="polite">_ ready.</div>
+
+      <div id="progressWrap">
+        <div id="progressBar"><div id="progressInner"></div></div>
+        <div id="progressText"></div>
+      </div>
+
+      <div class="foot">Tip: drag & drop PDFs onto the box, or click to select. Progress shows while verifying via API.</div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      // DOM
+      const out = document.getElementById('output');
+      const pdfInput = document.getElementById('pdfFile');
+      const fileLabel = document.getElementById('fileInputLabel');
+      const fileNameDisplay = document.getElementById('fileNameDisplay');
+      const runBtn = document.getElementById('runBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const progressInner = document.getElementById('progressInner');
+      const progressText = document.getElementById('progressText');
+
+      // data
+      let verifiedList = [];   // {code, name}
+      let extractedLinks = []; // strings
+      let allCodesOrdered = []; // array for consistent progress order
+
+      // improved universal regex
+      const codeRegex = /(?<![A-Za-z0-9])([A-Za-z]?\d{5,8}[A-Za-z]{0,3})(?![A-Za-z])/g;
+
+      // helpers
+      function clearOutput(){ out.innerHTML = '_ ready.'; progressInner.style.width = '0%'; progressText.textContent = ''; }
+      function logLine(type, code, name){
+        const wrap = document.createElement('div'); wrap.className = 'line';
+        const icon = document.createElement('span');
+        icon.className = (type === 'ok'? 'ok' : type === 'warn' ? 'warn' : type === 'err' ? 'err' : 'meta');
+        icon.textContent = type === 'ok' ? '✅' : type === 'warn' ? '⚠️' : type === 'err' ? '❌' : 'ℹ️';
+        const codeSpan = document.createElement('span'); codeSpan.className = 'code'; codeSpan.textContent = code;
+        const arrow = document.createElement('span'); arrow.textContent = '→';
+        const nameSpan = document.createElement('span'); nameSpan.className = 'name'; nameSpan.textContent = name ?? '';
+        nameSpan.title = 'Click to edit';
+        nameSpan.addEventListener('click', () => {
+          if (nameSpan.isContentEditable) return;
+          nameSpan.contentEditable = 'true'; nameSpan.focus();
+        });
+        nameSpan.addEventListener('blur', () => {
+          nameSpan.contentEditable = 'false';
+          const entry = verifiedList.find(v => v.code === code);
+          if(entry) entry.name = nameSpan.textContent.trim();
+        });
+        nameSpan.addEventListener('keydown', (ev) => { if(ev.key === 'Enter'){ ev.preventDefault(); nameSpan.blur(); }});
+        wrap.appendChild(icon); wrap.appendChild(codeSpan); wrap.appendChild(arrow); wrap.appendChild(nameSpan);
+        if (type === 'warn' || type === 'err') {
+          const del = document.createElement('span'); del.className = 'delete'; del.textContent = '✖'; del.title = 'Remove entry';
+          del.addEventListener('click', () => { wrap.remove(); verifiedList = verifiedList.filter(v => v.code !== code); });
+          wrap.appendChild(del);
+        }
+        out.appendChild(wrap); out.scrollTop = out.scrollHeight;
+      }
+
+      function setProgress(part, total){
+        if(!total || total === 0){ progressInner.style.width = '0%'; progressText.textContent = ''; return; }
+        const pct = Math.round((part / total) * 100);
+        progressInner.style.width = pct + '%';
+        progressText.textContent = `Progress: ${pct}% (${part} / ${total})`;
+      }
+
+      async function readPDF(file){
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let text = '';
+        for (let p = 1; p <= pdf.numPages; p++){
+          const page = await pdf.getPage(p);
+          const content = await page.getTextContent();
+          text += content.items.map(it => it.str).join(' ') + '\n';
+        }
+        return text;
+      }
+
+      function extractLinksFromText(text){
+        const urlRegex = /(https?:\/\/[^\s]+|[a-zA-Z0-9.-]+\.[a-z]{2,}(\/[^\s]*)?)/g;
+        const found = text.match(urlRegex);
+        if(!found) return;
+        for(let raw of found){
+          let link = raw.trim().replace(/[.,;:)+\]]+$/,'');
+          if(!extractedLinks.includes(link)){
+            extractedLinks.push(link);
+            const meta = document.createElement('div'); meta.className = 'meta'; meta.textContent = `🔗 Link → ${link}`;
+            out.appendChild(meta); out.scrollTop = out.scrollHeight;
+          }
+        }
+      }
+
+      function extractCodesFromText(text){
+        const matches = [...text.matchAll(codeRegex)];
+        const codes = matches.map(m => m[1].trim()).filter(c => c.length >= 6);
+        return codes;
+      }
+
+      async function extractCodesFromFile(file){
+        try{
+          const text = await readPDF(file);
+          extractLinksFromText(text);
+          const codes = extractCodesFromText(text);
+          return codes;
+        }catch(err){
+          const meta = document.createElement('div'); meta.className='meta'; meta.textContent = `⚠ Error reading ${file.name}: ${err.message || err}`;
+          out.appendChild(meta); out.scrollTop = out.scrollHeight;
+          return [];
+        }
+      }
+
+      async function verifyCodes(codesArray){
+        const total = codesArray.length; const verified = []; let idx = 0;
+        for(const code of codesArray){
+          idx++; setProgress(idx-1, total);
+          try{
+            const apiUrl = `https://www.laithwaites.co.uk/api/product/item/${encodeURIComponent(code)}`;
+            const res = await fetch(apiUrl);
+            if(!res.ok) throw new Error('http '+res.status);
+            const data = await res.json();
+            const name = data?.response?.name ?? null;
+            if(name){ verified.push({code, name}); logLine('ok', code, name); }
+            else { verified.push({code, name:null}); logLine('err', code, 'Not Found'); }
+          }catch(e){
+            verified.push({code, name:'Error Fetching'}); logLine('warn', code, 'Error Fetching');
+          }
+          setProgress(idx, total);
+        }
+        return verified;
+      }
+
+      function uniquePreserveOrder(arr){ const seen = new Set(); const out = []; for(const v of arr){ if(!seen.has(v)){ seen.add(v); out.push(v);} } return out; }
+
+      async function runExtractAndVerify(){
+        out.innerHTML = '⏳ initializing…'; progressInner.style.width = '0%'; progressText.textContent = '';
+        extractedLinks = []; verifiedList = []; allCodesOrdered = [];
+
+        const files = pdfInput.files;
+        if(!files || files.length === 0){ out.innerHTML = '_ ready.\n\n⚠ Select or drop one or more PDF files first.'; return; }
+
+        fileNameDisplay.textContent = files.length === 1 ? files[0].name : `${files.length} files selected`;
+
+        const tempCodes = [];
+        for(const f of files){
+          const codes = await extractCodesFromFile(f);
+          const meta = document.createElement('div'); meta.className='meta'; meta.textContent = `📄 ${f.name} → found ${codes.length} codes`;
+          out.appendChild(meta); tempCodes.push(...codes);
+        }
+
+        allCodesOrdered = uniquePreserveOrder(tempCodes);
+        if(allCodesOrdered.length === 0 && extractedLinks.length === 0){
+          out.appendChild(Object.assign(document.createElement('div'), { className:'meta', textContent:'\n❌ No order codes or links found.' })); return;
+        }
+
+        out.appendChild(Object.assign(document.createElement('div'), { className:'meta', textContent:`\n🔍 unique codes: ${allCodesOrdered.length} — validating…` }));
+
+        const verified = await verifyCodes(allCodesOrdered);
+        verifiedList = verified.map(v => ({ code: v.code, name: v.name }));
+        out.appendChild(Object.assign(document.createElement('div'), { className:'meta', textContent:`\n✅ valid codes: ${verifiedList.filter(v=>v.name && v.name !== 'Error Fetching').length}` }));
+        out.appendChild(Object.assign(document.createElement('div'), { className:'meta', textContent:`🔗 links captured: ${extractedLinks.length}\n` }));
+
+        document.getElementById('btnLaithwaites').disabled = false;
+        document.getElementById('btnSundayTimes').disabled = false;
+        document.getElementById('btnAverys').disabled = false;
+      }
+
+      function downloadExcel(type){
+        if(!verifiedList.length) return alert('No verified data to export yet.');
+        let baseUrl='', cid='', filename='';
+        if(type === 'laithwaites'){ baseUrl='https://www.laithwaites.co.uk'; cid='pageturner/LT1G24/LW'; filename='Laithwaites_OrderCodes.xlsx' }
+        else if(type === 'sunday'){ baseUrl='https://www.sundaytimeswineclub.co.uk'; cid='pageturner/WT1G24/WC'; filename='SundayTimes_OrderCodes.xlsx' }
+        else { baseUrl='https://www.averys.com'; cid='pageturner/VFF047/AV'; filename='Averys_OrderCodes.xlsx' }
+
+        const rows = verifiedList.map(v => ({ SearchText: v.code, URL: `${baseUrl}/product/${v.code}?cid=${cid}`, "MOUSEOVER TEXT": v.name ?? '' }));
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Codes');
+
+        const includeLinks = document.getElementById('includeLinks').checked;
+        if(includeLinks && extractedLinks.length){
+          const wsLinks = XLSX.utils.json_to_sheet(extractedLinks.map(l => ({ Link: l })));
+          XLSX.utils.book_append_sheet(wb, wsLinks, 'Links');
+        }
+        XLSX.writeFile(wb, filename);
+        const logEl = document.createElement('div'); logEl.className='meta'; logEl.textContent = `✅ downloaded: ${filename}`;
+        out.appendChild(logEl); out.scrollTop = out.scrollHeight;
+      }
+
+      function showSelectedFiles(){
+        const files = pdfInput.files;
+        if(!files || files.length === 0) fileNameDisplay.textContent = 'No file chosen';
+        else if(files.length === 1) fileNameDisplay.textContent = files[0].name;
+        else fileNameDisplay.textContent = `${files.length} files selected`;
+      }
+
+      // drag & drop handlers
+      ['dragenter','dragover'].forEach(ev => fileLabel.addEventListener(ev, (e) => { e.preventDefault(); fileLabel.classList.add('drop-hover'); }));
+      ['dragleave','drop','dragend'].forEach(ev => fileLabel.addEventListener(ev, (e) => { e.preventDefault(); fileLabel.classList.remove('drop-hover'); }));
+      fileLabel.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const dt = e.dataTransfer;
+        if(!dt) return;
+        const files = Array.from(dt.files).filter(f => f.type === 'application/pdf');
+        if(!files.length) return alert('Please drop PDF files only.');
+        const dataTransfer = new DataTransfer();
+        files.forEach(f => dataTransfer.items.add(f));
+        pdfInput.files = dataTransfer.files;
+        showSelectedFiles();
+      });
+
+      // wire events
+      pdfInput.addEventListener('change', showSelectedFiles);
+      runBtn.addEventListener('click', runExtractAndVerify);
+      clearBtn.addEventListener('click', clearOutput);
+      window.downloadExcel = downloadExcel;
+
+      // init
+      clearOutput();
+    })();
+  </script>
+</body>
+</html>
