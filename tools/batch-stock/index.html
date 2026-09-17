@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Batch Stock Lookup</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Batch Stock Lookup</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root {
+      /* Default = Dark Mode */
+      --bg: #1e1f23;
+      --panel: #2b2d31;
+      --text: #e0e0e0;
+      --muted: #a0a0a0;
+      --accent: #CF004F;
+      --accent-hover: #095a9c;
+      --table-bg: #2a2b2f;
+      --border: #3c3c42;
+    }
+
+    body.light-mode {
+      --bg: #f5f5f5;
+      --panel: #fff;
+      --text: #222;
+      --muted: #555;
+      --accent: #CF004F;
+      --accent-hover: #095a9c;
+      --table-bg: #fff;
+      --border: #ddd;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: var(--bg);
+      color: var(--text);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    h1, h2 { color: var(--text); }
+    p { color: var(--muted); }
+
+    textarea {
+      width: 25%;
+      height: 150px;
+      margin-bottom: 5px;
+      padding: 10px;
+      font-size: 14px;
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      transition: background 0.3s, color 0.3s, border 0.3s;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .controls button { margin-right: 10px; }
+    .line-count { font-size: 18px; color: var(--muted); margin-right: auto; }
+
+    button {
+      padding: 8px 12px;
+      margin: 5px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover { background: var(--accent-hover); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: var(--table-bg);
+      color: var(--text);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background: var(--accent);
+      color: white;
+    }
+
+    .invalid {
+      background-color: #FFCCCB;
+      color: #000000;
+      font-weight: bold;
+    }
+
+    .valid-green {
+      background-color: #C1E1C1;
+      color: #000000;
+      font-weight: bold;
+    }
+
+    /* Loading overlay */
+    #loadingOverlay {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.9);
+      padding: 15px;
+      border-radius: 10px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      z-index: 9999;
+      color: #fff;
+      font-size: 14px;
+      pointer-events: none;
+    }
+    .progress-container {
+      width: 260px;
+      background: #444;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    .progress-bar {
+      height: 20px;
+      width: 0%;
+      background: #4caf50;
+      text-align: center;
+      color: #fff;
+      font-weight: bold;
+      transition: width 0.2s ease;
+      font-size: 12px;
+      pointer-events: auto;
+    }
+
+    .signature {
+      margin-top: 50px;
+      font-size: 14px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    #loadingOverlay > * { pointer-events: auto; }
+
+    /* Toggle + input */
+    .toggle-container { margin-top: 10px; display: flex; align-items: center; gap: 10px; }
+    #stockThresholdInput {
+      display: none;
+      width: 80px;
+      padding: 5px;
+      font-size: 14px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+    }
+	 /* Theme toggle switch */
+    .theme-toggle {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .theme-toggle input {
+      width: 40px;
+      height: 20px;
+      appearance: none;
+      background: var(--border);
+      border-radius: 20px;
+      position: relative;
+      cursor: pointer;
+      outline: none;
+      transition: background 0.3s;
+    }
+    .theme-toggle input:checked {
+      background: var(--accent);
+    }
+    .theme-toggle input::before {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+    .theme-toggle input:checked::before {
+      transform: translateX(20px);
+    }
+.info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.close-info {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--muted);
+}
+.close-info:hover {
+  color: var(--accent);
+}
+
+.input-row {
+  display: flex;
+  gap: 20px; /* space between textarea and info box */
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.input-left {
+  flex: 1; /* textarea takes available space */
+}
+
+.info-box {
+  flex: 1; /* info box takes equal width (can adjust) */
+  padding: 15px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--panel);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+
+
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+  
+
+   <div style="display:flex;align-items:center;gap:10px;">
+    <h1>Batch Stock Lookup</h1>
+    <div class="theme-toggle">
+      🌙<input type="checkbox" id="themeSwitch">☀️
+    </div>
+  </div>
+
+
+  
+  <div class="input-row">
+  <!-- Left side: textarea -->
+  <div class="input-left">
+   
+    <textarea id="productList" placeholder="Enter product codes..."></textarea>
+	 <p>Paste product codes (one per line):</p>
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+    <!-- Right side: info box -->
+  <div class="info-box">
+    <h2>About this Tool</h2>
+    <p>
+      This Batch Stock Lookup tool is built to simplify large-scale product checks.  
+      Paste multiple product codes at once, and the system will automatically fetch 
+      real-time stock details, validate their availability, and flag invalid or outdated codes.  
+    </p>
+    <p>
+      Results are organized into clear categories — <strong>Valid Stock</strong>, 
+      <strong>Invalid/Remarks</strong>, <strong>Vintage Changes</strong>, 
+      and <strong>Happy to Wait</strong>.  
+    </p>
+    <p>
+      In short: faster lookups, fewer errors, and more confidence in your stock data.
+    </p>
+	<p>
+    <b style="color:red;">If the result shows an error/NA for an item, please double-check it with GV.</b>
+    </p>
+	<p>
+      version 2.0
+    </p>
+  </div>
+</div>
+  
+  <div class="controls">
+    <button onclick="clearInput()">Clear</button>
+    <button onclick="clearCache()">Clear Cache</button>
+    <span class="line-count">Lines: <span id="lineCount">0</span></span>
+  </div>
+  <button onclick="fetchAll()">Fetch Stock Info</button>
+  <button onclick="exportToExcel()">Export to Excel</button>
+  
+
+
+
+  <!-- Toggle for stock minimum -->
+  <div class="toggle-container">
+    <label>
+      <input type="checkbox" id="toggleThreshold" onchange="toggleThresholdInput()"> Enable custom Valid stock minimum
+    </label>
+    <input type="number" id="stockThresholdInput" min="1" value="13">
+  </div>
+
+  <!-- Invalid -->
+  <h2>Invalid / Remarks Stock</h2>
+  <div>
+    <button onclick="restoreDefault()">Default</button>
+    <button onclick="fixInvalidWithDigit(21)">Vintage 21</button>
+    <button onclick="fixInvalidWithDigit(22)">Vintage 22</button>
+    <button onclick="fixInvalidWithDigit(23)">Vintage 23</button>
+    <button onclick="fixInvalidWithDigit(24)">Vintage 24</button>
+    <button onclick="fixInvalidWithDigit(25)">Vintage 25</button>
+  </div>
+  <table id="invalidTable">
+    <thead>
+      <tr>
+        <th>No.</th>
+        <th>Product Code</th>
+        <th>Product Name</th>
+        <th>Status</th>
+        <th>Stock Value</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Happy to Wait -->
+  <h2>Happy to Wait</h2>
+  <table id="happyTable">
+    <thead>
+      <tr>
+        <th>No.</th>
+        <th>Old Code</th>
+        <th>New Code</th>
+        <th>Product Name</th>
+        <th>Status</th>
+        <th>Stock Value</th>
+        <th>Happy To Wait Date</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Vintage Changed -->
+  <h2>Vintage Changed</h2>
+  <table id="vintageTable">
+    <thead>
+      <tr>
+        <th>No.</th>
+        <th>Old Code</th>
+        <th>New Code</th>
+        <th>Product Name</th>
+        <th>Status</th>
+        <th>Stock Quantity</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Valid -->
+  <h2>Valid Stock Quantity</h2>
+  <table id="validTable">
+    <thead>
+      <tr>
+        <th>No.</th>
+        <th>Product Code</th>
+        <th>Product Name</th>
+        <th>Status</th>
+        <th>Stock Quantity</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Loading Screen -->
+  <div id="loadingOverlay">
+    <div id="loadingText">Processing...</div>
+    <div class="progress-container"><div class="progress-bar" id="progressBar">0%</div></div>
+    <div id="timeLeft"></div>
+    <div id="fetchSummary" style="margin-top:8px; font-size:13px;"></div>
+  </div>
+
+  <div class="signature">By Mahendran Selvaraj</div>
+
+  <script>
+
+  let startTime = null;
+
+  function toggleThresholdInput() {
+    const chk = document.getElementById("toggleThreshold");
+    const input = document.getElementById("stockThresholdInput");
+    input.style.display = chk.checked ? "inline-block" : "none";
+  }
+
+  function getStockThreshold() {
+    const chk = document.getElementById("toggleThreshold");
+    if (chk.checked) {
+      const val = parseInt(document.getElementById("stockThresholdInput").value, 10);
+      return isNaN(val) ? 13 : val;
+    }
+    return 13; // default
+  }
+
+  function showLoading(){ document.getElementById("loadingOverlay").style.display="flex"; updateProgress(0,0,0,0); startTime=Date.now();}
+  function hideLoading(){ document.getElementById("loadingOverlay").style.display="none"; document.getElementById("timeLeft").innerText=""; document.getElementById("fetchSummary").innerText=""; }
+  function formatSeconds(s){ if(!isFinite(s)||s<=0)return"0s";let m=Math.floor(s/60);let sec=Math.round(s%60);return m>0?`${m}m ${sec}s`:`${sec}s`; }
+  function updateProgress(percent,done=0,total=0,errors=0){let bar=document.getElementById("progressBar");bar.style.width=percent+"%";bar.innerText=percent+"%";if(done>0&&total>0&&startTime){let elapsed=(Date.now()-startTime)/1000;let avgTime=elapsed/done;let remaining=avgTime*(total-done);document.getElementById("timeLeft").innerText=`Processed ${done}/${total} • ETA: ${formatSeconds(remaining)}`;document.getElementById("fetchSummary").innerText=`Errors: ${errors}`;}else{document.getElementById("timeLeft").innerText="";document.getElementById("fetchSummary").innerText="";}}
+
+  function clearInput(){document.getElementById("productList").value="";updateLineCount();}
+  async function clearCache(){localStorage.clear();sessionStorage.clear();window.resultsData={valid:[],invalid:[],vintage:[],happy:[]};["#validTable tbody","#invalidTable tbody","#vintageTable tbody","#happyTable tbody"].forEach(s=>{const el=document.querySelector(s);if(el)el.innerHTML="";});alert("Cache cleared!");}
+
+  function updateLineCount(){let raw=document.getElementById("productList").value;let lines=raw.split(/\r\n|\r|\n/).map(l=>l.trim()).filter(l=>l.length>0).length;document.getElementById("lineCount").innerText=lines;}
+  document.getElementById("productList").addEventListener("input",updateLineCount);
+
+  async function fetchStock(productId){
+    try{
+      let controller=new AbortController();
+      let id=setTimeout(()=>controller.abort(),15000);
+      let response=await fetch(`https://www.laithwaites.co.uk/api/product/item/${productId}`,{signal:controller.signal});
+      clearTimeout(id);
+      let data=await response.json();
+      if(data.response&&data.response.inventoryInfo){
+        return {
+          code:productId,
+          name:data.response.name,
+          status:data.response.inventoryInfo.summaryAvailabilityStatus,
+          stock:data.response.inventoryInfo.stockQty,
+          happyToWaitDate:data.response.inventoryInfo.happyToWaitDateAsString || ""
+        };
+      }else{
+        return {code:productId,name:"N/A",status:"Not Found",stock:"N/A",happyToWaitDate:""};
+      }
+    }catch(err){
+      const errName=(err&&err.name==="AbortError")?"Timeout":"Error";
+      return {code:productId,name:errName,status:errName,stock:"-",happyToWaitDate:""};
+    }
+  }
+
+  async function fetchAll(){
+    let raw=document.getElementById("productList").value;
+    let productCodes=raw.split(/\r\n|\r|\n/).map(l=>l.trim()).filter(c=>c.length>0);
+    if(productCodes.length===0){alert("Please enter product codes.");return;}
+    
+    // Save default codes on first run
+    if(!window.defaultProductCodes){
+      window.defaultProductCodes=[...productCodes];
+    }
+
+    showLoading();
+    const validBodyEl=document.querySelector("#validTable tbody");
+    const invalidBodyEl=document.querySelector("#invalidTable tbody");
+    const happyBodyEl=document.querySelector("#happyTable tbody");
+    const vintageBodyEl=document.querySelector("#vintageTable tbody");
+    if(validBodyEl)validBodyEl.innerHTML="";
+    if(invalidBodyEl)invalidBodyEl.innerHTML="";
+    if(happyBodyEl)happyBodyEl.innerHTML="";
+    if(vintageBodyEl)vintageBodyEl.innerHTML="";
+    let validResults=[],invalidResults=[],happyResults=[],errors=0;
+    const threshold=getStockThreshold();
+
+    for(let i=0;i<productCodes.length;i++){
+      const code=productCodes[i];
+      const result=await fetchStock(code);
+      const isError=(result.name==="Error"||result.name==="Timeout"||result.stock==="-");
+      if(isError)errors++;
+      const stockNum=parseInt(result.stock,10);
+
+      if(result.happyToWaitDate){ 
+        happyResults.push({oldCode:"",newCode:result.code,...result});
+        happyBodyEl.insertAdjacentHTML("beforeend",
+          `<tr><td>${happyResults.length}</td><td>-</td><td>${escapeHtml(result.code)}</td><td>${escapeHtml(result.name)}</td><td>${escapeHtml(result.status)}</td><td>${escapeHtml(result.stock)}</td><td>${escapeHtml(result.happyToWaitDate)}</td></tr>`);
+      }else if(!isNaN(stockNum)&&stockNum>threshold){
+        validResults.push(result);
+        validBodyEl.insertAdjacentHTML("beforeend",
+          `<tr><td>${validResults.length}</td><td>${escapeHtml(result.code)}</td><td>${escapeHtml(result.name)}</td><td>${escapeHtml(result.status)}</td><td>${escapeHtml(result.stock)}</td></tr>`);
+      }else{
+        invalidResults.push(result);
+        invalidBodyEl.insertAdjacentHTML("beforeend",
+          `<tr class="invalid"><td>${invalidResults.length}</td><td>${escapeHtml(result.code)}</td><td>${escapeHtml(result.name)}</td><td>${escapeHtml(result.status)}</td><td>${escapeHtml(result.stock)}</td></tr>`);
+      }
+      const percent=Math.round(((i+1)/productCodes.length)*100);
+      updateProgress(percent,i+1,productCodes.length,errors);
+    }
+    window.resultsData={valid:validResults,invalid:invalidResults,vintage:window.resultsData?window.resultsData.vintage||[]:[],happy:happyResults};
+    setTimeout(hideLoading,600);
+  }
+
+  // Restore Default for Invalid/Happy/Vintage
+  async function restoreDefault(){
+    if(!window.defaultProductCodes || window.defaultProductCodes.length===0){
+      alert("No default product codes stored yet!");
+      return;
+    }
+    document.getElementById("productList").value=window.defaultProductCodes.join("\n");
+    updateLineCount();
+
+    document.querySelector("#invalidTable tbody").innerHTML="";
+    document.querySelector("#happyTable tbody").innerHTML="";
+    document.querySelector("#vintageTable tbody").innerHTML="";
+
+    await fetchAll();
+  }
+
+  async function fixInvalidWithDigit(digit){
+    showLoading();
+    const invalidBodyEl=document.querySelector("#invalidTable tbody");
+    const vintageBodyEl=document.querySelector("#vintageTable tbody");
+    const happyBodyEl=document.querySelector("#happyTable tbody");
+    const rows=Array.from(invalidBodyEl.querySelectorAll("tr"));
+    let stillInvalid=[],changed=[],happyFound=[],errors=0;
+    invalidBodyEl.innerHTML="";
+    const threshold=getStockThreshold();
+
+    for(let i=0;i<rows.length;i++){
+      const oldCode=rows[i].cells[1].innerText.trim();
+      const newCode=(oldCode.length>=2)?oldCode.slice(0,-2)+String(digit):String(digit);
+
+      const result=await fetchStock(newCode);
+      const isError=(result.name==="Error"||result.name==="Timeout"||result.stock==="-");
+      if(isError)errors++;
+
+      const stockNum=parseInt(result.stock,10);
+
+      if(result.happyToWaitDate){
+        happyFound.push({oldCode,newCode,...result});
+        happyBodyEl.insertAdjacentHTML("beforeend",
+          `<tr class="valid-green"><td>${happyFound.length}</td><td>${escapeHtml(oldCode)}</td><td>${escapeHtml(newCode)}</td><td>${escapeHtml(result.name)}</td><td>${escapeHtml(result.status)}</td><td>${escapeHtml(result.stock)}</td><td>${escapeHtml(result.happyToWaitDate)}</td></tr>`);
+      }
+      else if(!isNaN(stockNum)&&stockNum>threshold){
+        changed.push({oldCode,newCode,...result});
+        vintageBodyEl.insertAdjacentHTML("beforeend",
+          `<tr class="valid-green"><td>${changed.length}</td><td>${escapeHtml(oldCode)}</td><td>${escapeHtml(newCode)}</td><td>${escapeHtml(result.name)}</td><td>${escapeHtml(result.status)}</td><td>${escapeHtml(result.stock)}</td></tr>`);
+      }else{
+        stillInvalid.push({...result,code:oldCode});
+      }
+
+      const percent=Math.round(((i+1)/rows.length)*100);
+      updateProgress(percent,i+1,rows.length,errors);
+    }
+
+    for(let i=0;i<stillInvalid.length;i++){
+      const r=stillInvalid[i];
+      invalidBodyEl.insertAdjacentHTML("beforeend",
+        `<tr class="invalid"><td>${i+1}</td><td>${escapeHtml(r.code)}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.status)}</td><td>${escapeHtml(r.stock)}</td></tr>`);
+    }
+
+    window.resultsData=window.resultsData||{valid:[],invalid:[],vintage:[],happy:[]};
+    window.resultsData.vintage.push(...changed);
+    window.resultsData.happy.push(...happyFound);
+    window.resultsData.invalid=stillInvalid;
+    setTimeout(hideLoading,400);
+  }
+
+  function exportToExcel(){
+    if(!window.resultsData||(window.resultsData.valid.length===0&&window.resultsData.invalid.length===0&&window.resultsData.vintage.length===0&&window.resultsData.happy.length===0)){alert("No data to export!");return;}
+    let wb=XLSX.utils.book_new();
+    if(window.resultsData.invalid.length>0){let wsInvalid=XLSX.utils.json_to_sheet(window.resultsData.invalid);XLSX.utils.book_append_sheet(wb,wsInvalid,"Invalid Stock");}
+    if(window.resultsData.happy.length>0){let wsHappy=XLSX.utils.json_to_sheet(window.resultsData.happy);XLSX.utils.book_append_sheet(wb,wsHappy,"Happy to Wait");}
+    if(window.resultsData.vintage.length>0){let wsVintage=XLSX.utils.json_to_sheet(window.resultsData.vintage);XLSX.utils.book_append_sheet(wb,wsVintage,"Vintage Changed");}
+    if(window.resultsData.valid.length>0){let wsValid=XLSX.utils.json_to_sheet(window.resultsData.valid);XLSX.utils.book_append_sheet(wb,wsValid,"Valid Stock");}
+    XLSX.writeFile(wb,"stock_info.xlsx");
+  }
+
+  function escapeHtml(str){if(str===null||str===undefined)return"";return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");}
+  window.resultsData=window.resultsData||{valid:[],invalid:[],vintage:[],happy:[]};updateLineCount();
+  </script>
+  <script>
+ const themeSwitch = document.getElementById("themeSwitch");
+    function setTheme(mode) {
+      if (mode === "light") {
+        document.body.classList.add("light-mode");
+        themeSwitch.checked = true;
+      } else {
+        document.body.classList.remove("light-mode");
+        themeSwitch.checked = false;
+      }
+      localStorage.setItem("theme", mode);
+    }
+
+    themeSwitch.addEventListener("change", () => {
+      setTheme(themeSwitch.checked ? "light" : "dark");
+    });
+
+    // Load saved theme
+    (function() {
+      const saved = localStorage.getItem("theme") || "dark";
+      setTheme(saved);
+    })();
+</script>
+
+</body>
+</html>
